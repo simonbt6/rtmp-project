@@ -10,7 +10,7 @@ typedef unsigned short  u_int16;
 typedef unsigned int    u_int32;
 
 namespace RTCP{
-    typedef enum PACKET_TYPE{
+    enum PACKET_TYPE{
         SR = 200,               // Sender report 200
         RR = 201,               // Receiver report
         SDES = 202,             // Source description
@@ -18,7 +18,7 @@ namespace RTCP{
         APP = 204,              // Application-defined
     };
     
-    typedef enum SDES_TYPES{
+    enum SDES_TYPES{
         END = 0,                // End of SDES list
         CNAME = 1,              // Canonical name
         NAME = 2,               // User name
@@ -33,7 +33,7 @@ namespace RTCP{
     /**
      *  RTP data header 
      **/
-    typedef struct HEADER_TYPE{
+    struct HEADER_TYPE{
         unsigned int version:2; // Protocol version
         unsigned int p:1;       // Padding flag
         unsigned int x:1;       // Header extension flag
@@ -49,7 +49,7 @@ namespace RTCP{
     /**
      * RTCP common header word
      **/
-    typedef struct COMMON_TYPE{
+    struct COMMON_TYPE{
         unsigned int version:2; // Protocol version
         unsigned int p:1;       // Padding flag
         unsigned int count:5;   // Varies by packet type
@@ -60,7 +60,7 @@ namespace RTCP{
     /**
      * Reception report block
      **/
-    typedef struct RR_TYPE{
+    struct RR_TYPE{
         u_int32 ssrc;           // Data source being reported
         unsigned int fraction:8;// Fraction lost since last SR/RR
         int lost:24;            // Cummulative number packet lost (signed)
@@ -73,7 +73,7 @@ namespace RTCP{
     /**
      *  SDES item 
      **/
-    typedef struct SDES_ITEM_TYPE{
+    struct SDES_ITEM_TYPE{
         u_int8 type;            // Type of item (SDES_TYPE)
         u_int8 length;          // Length of item in octets
         char data[1];           // Text, not null-terminated
@@ -82,7 +82,7 @@ namespace RTCP{
     /**
      * One RTCP packet
      **/
-    typedef struct TYPE{
+    struct TYPE{
         COMMON_TYPE common;
         union {
             // Sender report
@@ -119,7 +119,7 @@ namespace RTCP{
     /**
      * Per-source state information
      **/
-    typedef struct source {
+    struct source {
         u_int16 max_seq;        // Highest sequence of number seen
         u_int32 cycles;         // Shifted count of sequence number cycles
         u_int32 base_seq;       // Base sequence number
