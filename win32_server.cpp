@@ -4,10 +4,12 @@
 #include "RTMPController.hpp"
 #include <fstream>
 
+#ifdef _WIN32
 #include <WS2tcpip.h>
 #include <windows.h>
 #include "WinSock2.h"
 #pragma comment("lib", "ws2_32.lib")
+#endif
 
 #define PORT 9898
 #define DEFAULT_BUFLEN 4096
