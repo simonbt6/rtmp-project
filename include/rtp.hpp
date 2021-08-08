@@ -1,9 +1,15 @@
+#pragma once
 /**
  * Author: Simon Brisebois-Therrien
  * Date: 2021-08-08
  * Documentation: 
  *  - https://datatracker.ietf.org/doc/html/rfc3550
  *  - https://www.adobe.com/content/dam/acom/en/devnet/rtmp/pdf/rtmp_specification_1.0.pdf
+ * 
+ * C0: 1 byte
+ *  - version: 1 byte
+ *      - RTMP version requested by the client.
+ *      - 0-2 are deprecated.
  * 
  * C1 & S1: 1536 bytes
  *  - time: 4 bytes
@@ -26,7 +32,7 @@
 
 #include <sys/types.h>
 
-#define RTP_VERSION 2           // Protocol version
+#define RTP_VERSION 3           // Protocol version
 
 #define RTP_SEQ_MOD (1<<16)
 #define RTP_MAX_SDES 255        // Maximum text length for SDES

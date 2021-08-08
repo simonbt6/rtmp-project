@@ -45,7 +45,7 @@ int main()
 {
     vector<int> data = readHandshake();
     
-    // Index markers.
+    // index of C0
     int iC0;
 
     for (int i = 0; i < data.size(); i++)
@@ -53,7 +53,7 @@ int main()
         int x = data.at(i);
 
         // Find 0x03/C0 index.
-        if (x == 3) iC0 = i;
+        if (x == RTP_VERSION) iC0 = i;
     }
 
     // Handshake C1.
