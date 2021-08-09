@@ -1,7 +1,7 @@
 
 #include <iostream>
-#include "rtp.hpp"
-#include "RTMPController.hpp"
+#include "../src/core/rtp.hpp"
+//#include "RTMPController.hpp"
 #include <fstream>
 
 #ifdef _WIN32
@@ -99,7 +99,7 @@ int main(int argc, char** argv) {
         iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
         if (iResult > 0) {
             printf("Bytes received: %d\n", iResult);
-            RTMPController::parseRequest(recvbuf);
+            //RTMPController::parseRequest(recvbuf);
 
         // Echo the buffer back to the sender
             iSendResult = send( ClientSocket, recvbuf, iResult, 0 );
