@@ -1,5 +1,13 @@
 #pragma once
 
+/**
+ * Author: Simon Brisebois-Therrien
+ * Date: 2021-08-09
+ * 
+ * Documentation: 
+ *  - https://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/flash/net/NetStreamPlayOptions.html
+ **/
+
 class NetStream
 {
     public:
@@ -26,7 +34,30 @@ class NetStream
          *  - Reset: Bool. Whether to flush any previous playlist.
          **/
         void play();
+        /**
+         * Play2 can switch to a different bit rate stream without changing
+         * the timeline of the content played.
+         * 
+         * Command structure: 
+         *  - Command name: Name of the command. Set to "play2".
+         *  - Transaction ID: 0
+         *  - Command object: null
+         *  - Parameters: AMF encoded object whose properties are the public properties
+         *                described for the flash.net.NetStreamPlayOptions ActionScript object.
+         *                (See documentation.)
+         **/
         void play2();
+        /**
+         * NetStream sends the deleteStream command when the NetStream object is getting destroyed.
+         * 
+         * Command structure: 
+         *  - Command name: Name of the command. Set to "deleteStream".
+         *  - Transaction ID: 0
+         *  - Command object: null.
+         *  - Stream ID: The ID of the stream that is destroyed on the server.
+         * 
+         * Server doesn't send any response.
+         **/
         void deleteStream();
         void closeStream();
         void receiveAudio();
