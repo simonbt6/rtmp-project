@@ -3,6 +3,7 @@
 # Requirements:
 - MSVC compiler 2015+ or CLANG 10+ compiler installed.
 - MacOS or Windows (Linux coming soon...)
+- CMake 3+
 
 # Installation:
 - Clone repository.  
