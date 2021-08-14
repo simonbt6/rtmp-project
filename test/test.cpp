@@ -3,6 +3,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <boost/serialization/serialization.hpp>
 
 #include "../src/core/rtp.hpp"
 //#include "../include/RTMPController.hpp"
@@ -41,22 +42,59 @@ vector<int> readFromIndex(vector<int> v, int index)
     return data;
 }
 
+struct C1
+{
+    int* time;
+    int* zeros;
+    int* randomBytes;
+};
+
+C1 readC1(vector<int> v)
+{
+    v.erase(v.begin());   
+    if (v.size() != 1536) return;
+    
+    /**
+     * time:            4 bytes
+     * zero:            4 bytes
+     * random bytes:    1528 bytes
+     **/
+    int time[4], 
+        zeros[4], 
+        randomBytes[1528];
+
+    for (int i = 0; i < v.size(); i++)
+    {
+        if (i < 4) time[i] = v.at(i);
+        else if (i >= 4 && i < 8) zeros[i] = v.at(i);
+        else if (i >= 8) randomBytes[i] = v.at(i); 
+    }
+
+    return C1 {time, zeros, randomBytes};
+}
+
 int main()
 {
     vector<int> data = readHandshake();
+
+    // Validate RTMP packet version.
+    if (!(data.at(0) == RTP_VERSION)) 
+        printf("RTMP packet not valid.");
+
+    C1 c1 = readC1(data);
     
-    // index of C0
-    int iC0;
-
-    for (int i = 0; i < data.size(); i++)
+    for (int i = 0; i < 4; i++)
     {
-        int x = data.at(i);
-
-        // Find 0x03/C0 index.
-        if (x == RTP_VERSION) iC0 = i;
+        cout << c1.time[i] << endl;
     }
+    
 
-    // Handshake C1.
-    vector<int> C1 = readFromIndex(data, iC0);
 }
+/**
+ * Message type ID:
+ * 
+ * User control message --> 4
+ * RTMP Chunk Stream    --> 1, 2, 3, 5, 6 
+ * 
+ **/
 
