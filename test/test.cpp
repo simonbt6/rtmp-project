@@ -56,6 +56,22 @@ int main()
     if (!(handshake.C0.version == RTP_VERSION)) 
         printf("RTMP packet not valid.");
 
+    printf("\nRTMP Version: %i", handshake.C0.version);
+    printf("\nC1 Time: %i %i %i %i", 
+            handshake.C1.time[0], 
+            handshake.C1.time[1], 
+            handshake.C1.time[2], 
+            handshake.C1.time[3]
+    );
+    printf("\nC1 random bytes: ");
+    for (int i = 0; i < RANDOM_BYTES_COUNT; i++)
+    {
+        if (i % 16 == 0) printf("\n");
+        else if (i % 8 == 0) printf("   ");
+        printf("%i ", handshake.C1.randomBytes[i]);
+    }
+
+
 }
 /**
  * Message type ID:
