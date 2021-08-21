@@ -24,6 +24,11 @@ namespace RTMP {
         handshake.C0.version = (unsigned short int) data.at(0);        
     }
 
+    /**
+     * Time: 4 bytes.
+     * Zeros: 4 bytes.
+     * Random bytes: 1528 bytes.
+     **/
     void Parser::ParseF1(vector<int>& data, Handshake::Handshake& handshake)
     {
         // Time
@@ -31,8 +36,8 @@ namespace RTMP {
             handshake.C1.time[i] = data.at(i + 1);
 
         // Random bytes
-        for (int i = 0; i < RANDOM_BYTES_COUNT + 1; i++)
-            handshake.C1.randomBytes[i] = data.at(i + 5);
+        for (int i = 0; i < RANDOM_BYTES_COUNT; i++)
+            handshake.C1.randomBytes[i] = data.at(i + 9);
     }
 
     void Parser::ParseF2(vector<int>& data, Handshake::Handshake& handshake)
