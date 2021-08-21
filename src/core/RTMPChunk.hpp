@@ -49,9 +49,98 @@ namespace RTMP
             unsigned int csid_minus_64;
         };
 
+        /** 
+         * There are four different formats for the chunk message header,
+         * selected by the "fmt" field in the chunk basic header.
+         **/
         struct MessageHeader
         {
+            enum ChunkHeaderFormat
+            {
+                /**
+                 * Size: 11 bytes.
+                 * 
+                 * This type must be used at the start fo a chunk stream, and whenever
+                 * the stream timestamp goes backward (e.g., because of a backward seek).
+                 **/
+                Type0,
 
+                /**
+                 * Size: 7 bytes.
+                 * 
+                 * The message type ID is not included; this chunk takes the same stream ID
+                 * as the preceding chunk. Streams with variable-sized messages (for example,
+                 * many video formats) should use this format for the first chunk of each new
+                 * message after the first.
+                 **/
+                Type1,
+
+                /**
+                 * Size: 3 bytes.
+                 * 
+                 * Neither the stream ID nor the message length is included; this chunk has the 
+                 * same stream ID and message length as the preceding chunk. Streams with constant
+                 * sized messages (for example, some audio and data formats) should use this format
+                 * for the first chunk of each message after the first.
+                 **/
+                Type2,
+
+                /**
+                 * Size: 0 bytes.
+                 * 
+                 * Type 3 chunks have no message header. The stream ID, message length and timestamp
+                 * delta fields are not present; chunks of this type take values from the preceding
+                 * chunk for the same Chunk Stream ID. When a single message is split into chunks,
+                 * all chunks of a message except the first one should use this type.
+                 * 
+                 * A stream consisting of messages of exacly the same size, stream ID and spacing
+                 * in time should use this type for all chunks after a chunk of type 2.
+                 * 
+                 * If the delta between the first message and the second message is same as the
+                 * timestamp of the first message, then a chunk of Type 3 could immidiately follow
+                 * the chunk of Type 0 as there is no need for a chunk of Type 2 to register the delta.
+                 * If a Type 3 chunk follows a Type 0 chunk, then the timestamp delta for this Type 3
+                 * chunk is the same as the timestamp of the Type 0 chunk.
+                 **/
+                Type3
+            };
+            
+            /**
+             * Size: 3 bytes.
+             * 
+             * For a Type 1 or Type 2 chunk, the difference between the previous chunk's timestamp
+             * and the current is sent here. If the delta is greater than or equal to 16777215 (0xFFFFFF),
+             * this field MUST be 0xFFFFFF, indicating the presence of the Extended Timestamp field to
+             * encode the full 32 bit delta. Otherwise, this field SHOULD be the actual delta.
+             **/
+            int timestamp_delta;
+
+            /**
+             * Size: 3 bytes.
+             * 
+             * For a Type 0 or Type 1 chunk, the length of the message is sent here. Note that this is
+             * generally not the same as the length of the chunk payload. The chunk payload length
+             * remainer (which may be the entire length, for a small message) for the last chunk.
+             **/
+            int message_length;
+
+            /**
+             * Size: 1 byte.
+             * 
+             * For a Type 0 or Type 1 chunk, type of the message is sent here.
+             **/
+            int message_type_id;
+
+            /**
+             * Size: 4 bytes.
+             * 
+             * For a Type 0 chunk, the message  stream ID is stored. Message stream ID is stored
+             * in little-endian format. Typically, all messages in the same chunk stream will come from
+             * the same message stream. While it is possible to multiplex separate message streams into
+             * the same chunk stream, this defeats the benefits of the header compression. However, if
+             * one message stream is closed and another one subsequently opened, there is no reason an
+             * existing chunk stream cannot be reused by sending a new Type 0 chunk.
+             **/
         };
     };
 
@@ -87,6 +176,14 @@ namespace RTMP
          * 
          * This field is present in certain circumstances depending on the encoded 
          * timestamp or timestamp delta field in the chunk message header.
+         * 
+         * The Extended Timestamp field is used to encode timestamps or timestamp deltas
+         * that are greater than 0xFFFFFF; that is, for timestamps or timestamp deltas
+         * that don't fit in the 24-bit fields of Type 0, 1 or 2 chunks. This field encodes
+         * the complete 32-bit timestamp or timestamp delta. The presence of this field is
+         * indicated by setting the timestamp field of a Type1 or 2 chunk, to 0xFFFFFF.
+         * This field is present in Type 3 chunks when the most recent Type 0, 1 or 2 chunk
+         * for the same chunk stream ID indicated the presence of an extended timestamp field.
          **/
         int* ExtendedTimestamp;
 
