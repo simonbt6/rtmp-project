@@ -7,6 +7,7 @@
 #include "../src/core/RTMPHandshake.hpp"
 #include "../src/core/RTMPParser.hpp"
 #include "../src/core/rtp.hpp"
+#include "../src/utils/FormatedPrint.hpp"
 //#include "../include/RTMPController.hpp"
 
 using namespace std;
@@ -64,12 +65,8 @@ int main()
             handshake.C1.time[3]
     );
     printf("\nC1 random bytes: ");
-    for (int i = 0; i < RANDOM_BYTES_COUNT; i++)
-    {
-        if (i % 16 == 0) printf("\n");
-        else if (i % 8 == 0) printf("   ");
-        printf("%i ", handshake.C1.randomBytes[i]);
-    }
+    Utils::FormatedPrint::PrintBytes((int*)handshake.C1.randomBytes, RANDOM_BYTES_COUNT);
+    
 
 
 }

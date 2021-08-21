@@ -11,17 +11,9 @@ using namespace std;
 
 namespace RTMP {
 
-    void print(int* arr, int length)
-    {
-        for (int i = 0; i < length; i++)
-        {
-            if (i % 16 == 0) printf("\n");
-            else if (i % 8 == 0) printf("   ");
-            
-            printf("\n%i", arr[i]);
-        }
-    }
-
+    /**
+     * Version: 1 byte
+     **/
     void Parser::ParseF0(vector<int>& data, Handshake::Handshake& handshake)
     {
         handshake.C0.version = (unsigned short int) data.at(0);        
@@ -43,6 +35,11 @@ namespace RTMP {
             handshake.C1.randomBytes[i] = data.at(i + 9);
     }
 
+    /**
+     * Time: 4 bytes.
+     * Time2: 4 bytes.
+     * Random bytes: 1528 bytes.
+     **/
     void Parser::ParseF2(vector<int>& data, Handshake::Handshake& handshake)
     {
         for (int i = 0; i < TIME_BYTES_COUNT; i++) 
