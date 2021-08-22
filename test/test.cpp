@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "../src/core/RTMPHandshake.hpp"
+#include "../src/core/RTMPChunk.hpp"
 #include "../src/core/RTMPParser.hpp"
 #include "../src/core/rtp.hpp"
 #include "../src/utils/FormatedPrint.hpp"
@@ -12,12 +13,12 @@
 
 using namespace std;
 
-vector<int> readHandshake()
+vector<int> read(string path)
 {
     string line;
     vector<string> strdata;
     vector<int> data;
-    ifstream file("data/handshake.bin");
+    ifstream file(path);
     
     while(getline(file, line))
     {
@@ -35,18 +36,9 @@ vector<int> readHandshake()
     return data;
 }
 
-vector<int> readFromIndex(vector<int> v, int index)
+void readHandshakeTest()
 {
-    int size = v.size();
-    vector<int> data;
-    for (int i = index + 1; i < size; i++)
-        data.push_back(v.at(i));
-    return data;
-}
-
-int main()
-{
-    vector<int> data = readHandshake();
+    vector<int> data = read("data/handshake.bin");
 
 
     // Parse handshake
@@ -66,9 +58,23 @@ int main()
     );
     printf("\nC1 random bytes: ");
     Utils::FormatedPrint::PrintBytes((int*)handshake.C1.randomBytes, RANDOM_BYTES_COUNT);
-    
+}
 
+void readCommandTest()
+{
+    vector<int> data = read("data/setchunksize.bin");
 
+    Utils::FormatedPrint::PrintBytes(data.data(), data.size());
+
+    RTMP::Chunk chunk;
+
+    RTMP::Parser::ParseChunk(data, chunk);
+}
+
+int main()
+{
+    //readHandshakeTest();
+    readCommandTest();
 }
 /**
  * Message type ID:
