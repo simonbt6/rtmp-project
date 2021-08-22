@@ -74,4 +74,138 @@ namespace RTMP {
             handshake.state = Handshake::State::DoneSent;
         }
     }
+
+
+    /**
+     * Chunk Parsing.
+     **/
+
+    void Parser::ParseChunkBasicHeader(vector<int>& data, Chunk& chunk)
+    {
+        /**
+         * - format
+         * - chunk stream id
+         * - chunk stream id - 64
+         **/
+        // Byte 0
+        unsigned int bZero = (unsigned) data.at(0);
+
+        // format
+        unsigned int fmt = (unsigned) bZero >> 6;
+        printf("\nFormat value is: %i", fmt);
+
+        // chunk stream id
+        unsigned int csid = (unsigned) bZero & 0x3F;
+        chunk.basicHeader.baseID = csid;
+        // If the chunk stream id is of 0 or 1,
+        // it's a 2 or 3 bytes header field.
+        if (csid == 0) 
+            csid = data.at(1) + 64;
+        else if (csid == 1) 
+            csid = ((data.at(2))*256 + (data.at(1) + 64));
+
+        printf("\nChunk stream id: %i", csid);
+
+        // Assignations
+        chunk.basicHeader.csid = csid;
+        chunk.basicHeader.fmt = fmt;
+    }
+
+    void Parser::ParseChunkMessageHeader(vector<int>& data, Chunk& chunk)
+    {
+        int fmt = chunk.basicHeader.fmt;
+        int baseI = (chunk.basicHeader.baseID * -1) + 3;
+        unsigned char    bTimestamp[3], 
+                bMessageLength[3], 
+                bMessageTypeId[4]; 
+        switch (fmt)
+        {
+            case ChunkHeader::MessageHeader::ChunkHeaderFormat::Type0:
+                for (int i = 0; i < 3; i++)
+                {
+                    bTimestamp[i] = data.at(i + baseI);
+                    bMessageLength[i] = data.at(i + baseI + 3);
+                }
+                // Timestamp delta
+                Utils::BitOperations::bytesToInteger<int>(
+                    chunk.messageHeader.timestamp_delta,
+                    bTimestamp,
+                    false);
+                // Message length
+                Utils::BitOperations::bytesToInteger<int>(
+                    chunk.messageHeader.message_length, 
+                    bMessageLength, 
+                    false);
+                // Message type id
+                chunk.messageHeader.message_type_id = data.at(6 + baseI);
+                for (int i = 0; i < 4; i++)
+                    bMessageTypeId[i] = data.at(i + 7 + baseI);
+                // Message stream id
+                Utils::BitOperations::bytesToInteger<int>(
+                    chunk.messageHeader.message_stream_id, 
+                    bMessageTypeId,
+                    false);
+                delete &bTimestamp, &bMessageLength, bMessageTypeId;
+                break;
+
+            case ChunkHeader::MessageHeader::ChunkHeaderFormat::Type1:
+                for (int i = 0; i < 3; i++)
+                {
+                    bTimestamp[i] = data.at(i + baseI);
+                    bMessageLength[i] = data.at(i + baseI + 3);
+                }
+                // Timestamp delta
+                Utils::BitOperations::bytesToInteger<int>(
+                    chunk.messageHeader.timestamp_delta,
+                    bTimestamp,
+                    false);
+                // Message length
+                Utils::BitOperations::bytesToInteger<int>(
+                    chunk.messageHeader.message_length, 
+                    bMessageLength, 
+                    false);
+                // Message type id
+                chunk.messageHeader.message_type_id = data.at(6 + baseI);
+                delete &bTimestamp, &bMessageLength;
+                break;
+
+            case ChunkHeader::MessageHeader::ChunkHeaderFormat::Type2:
+                for (int i = 0; i < 3; i++)
+                    bTimestamp[i] = data.at(i + baseI);
+                Utils::BitOperations::bytesToInteger(
+                    chunk.messageHeader.timestamp_delta,
+                    bTimestamp,
+                    false);
+                break;
+
+            case ChunkHeader::MessageHeader::ChunkHeaderFormat::Type3:
+                // No message header.
+                break;
+
+            default:
+                printf("\nError: No message header type matching.");
+                // Error
+                break;
+        };
+        printf("\nMessage type ID: %i", chunk.messageHeader.message_type_id);
+        printf("\nMessage stream ID: %i", chunk.messageHeader.message_stream_id);
+        printf("\nMessage Timestamp delta: %i", chunk.messageHeader.timestamp_delta);
+    }
+
+    void Parser::ParseChunkExtendedTimestamp(vector<int>& data, Chunk& chunk)
+    {
+
+    }
+
+    void Parser::ParseChunkData(vector<int>& data, Chunk& chunk) 
+    {
+
+    }
+
+    void Parser::ParseChunk(vector<int>& data, Chunk& chunk)
+    {
+        ParseChunkBasicHeader(data, chunk);
+        ParseChunkMessageHeader(data, chunk);
+    }
+
 }

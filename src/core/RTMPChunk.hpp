@@ -46,7 +46,9 @@ namespace RTMP
              * 64. For example, ID 365 would be represented by a 1 in cs id, and a 16-bit
              * 301 here.
              **/
-            unsigned int csid_minus_64;
+            //unsigned int csid_minus_64;
+
+            unsigned int baseID;
         };
 
         /** 
@@ -141,6 +143,7 @@ namespace RTMP
              * one message stream is closed and another one subsequently opened, there is no reason an
              * existing chunk stream cannot be reused by sending a new Type 0 chunk.
              **/
+            int message_stream_id;
         };
     };
 
@@ -158,7 +161,7 @@ namespace RTMP
          * determines the format of the encoded message header. The length depends
          * entirely on the chunk stream ID, which is a variable-length field.
          **/
-        int* BasicHeader;
+        ChunkHeader::BasicHeader basicHeader;
 
         /**
          * Message Header
@@ -168,7 +171,7 @@ namespace RTMP
          * whole or in part). The length can be determined using the chunk type
          * specified in the chunk header.
          **/
-        int* MessageHeader;
+        ChunkHeader::MessageHeader messageHeader;
 
         /**
          * Extended Timestamp
@@ -185,7 +188,7 @@ namespace RTMP
          * This field is present in Type 3 chunks when the most recent Type 0, 1 or 2 chunk
          * for the same chunk stream ID indicated the presence of an extended timestamp field.
          **/
-        int* ExtendedTimestamp;
+        int* extendedTimestamp;
 
         /**
          * Chunk Data
@@ -193,7 +196,7 @@ namespace RTMP
          * 
          * The payload of this chunk, up to the configured maximum chunk size.
          **/
-        int* Data;
+        int* data;
 
     };
 }
