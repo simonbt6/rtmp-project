@@ -190,6 +190,7 @@ namespace RTMP {
 
             case ChunkHeader::MessageHeader::ChunkHeaderFormat::Type3:
                 // No message header.
+                printf("\nType3 header format: No message header.");
                 break;
 
             default:
@@ -237,6 +238,52 @@ namespace RTMP {
         ParseChunkMessageHeader(data, chunk);
         ParseChunkExtendedTimestamp(data, chunk);
         ParseChunkData(data, chunk);
+
+        /** 
+         * Determine message type.
+         */
+        if (chunk.messageHeader.message_type_id == 0)
+        {
+            // Idk if this is possible.
+        }
+        else if (6 >= chunk.messageHeader.message_type_id)
+        {
+            // Protocol control message.
+            switch (chunk.messageHeader.message_type_id)
+            {
+                case ProtocolControlMessage::Type::SetChunkSize:
+                    break;
+                case ProtocolControlMessage::Type::Abort:
+                    break;
+                case ProtocolControlMessage::Type::Acknowledgement:
+                    break;
+                case ProtocolControlMessage::Type::WindowAcknowledgementSize:
+                    break;
+                case ProtocolControlMessage::Type::SetPeerBandwidth:
+                    break;
+            };
+        }
+        // Normal message.
+        else
+        {
+            switch (chunk.messageHeader.message_type_id)
+            {
+                case Message::Type::AudioMessage:
+                    break;
+                case Message::Type::VideoMessage:
+                    break;
+                case Message::Type::AggregateMessage:
+                    break;
+                case Message::Type::UserControlMessageEvents:
+                    break;
+                case Message::Type::CommandMessage:
+                    break;
+                case Message::Type::DataMessage:
+                    break;
+                case Message::Type::SharedObjectMessage:
+                    break;
+            }
+        }
 
         #if (__DEBUG == true)
         printf("\nMessage timestamp delta: %i", chunk.messageHeader.timestamp_delta);
