@@ -9,6 +9,7 @@
 #include "RTMPHandshake.hpp"
 #include "RTMPChunk.hpp"
 #include "../utils/Bit.hpp"
+#include "../utils/FormatedPrint.hpp"
 #include "rtp.hpp"
 
 #include <iostream>
