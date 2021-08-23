@@ -4,6 +4,7 @@
  * 
  * Implementation RTMP packet parser.
  **/
+#define __DEBUG true
 
 #include "RTMPParser.hpp"
 
@@ -82,11 +83,6 @@ namespace RTMP {
 
     void Parser::ParseChunkBasicHeader(vector<int>& data, Chunk& chunk)
     {
-        /**
-         * - format
-         * - chunk stream id
-         * - chunk stream id - 64
-         **/
         // Byte 0
         unsigned int bZero = (unsigned) data.at(0);
 
@@ -115,12 +111,15 @@ namespace RTMP {
     {
         int fmt = chunk.basicHeader.fmt;
         int baseI = (chunk.basicHeader.baseID * -1) + 3;
-        unsigned char    bTimestamp[3], 
-                bMessageLength[3], 
-                bMessageTypeId[4]; 
+        chunk.displacement += baseI;
+        unsigned char   bTimestamp[3], 
+                        bMessageLength[3], 
+                        bMessageTypeId[4]; 
         switch (fmt)
         {
             case ChunkHeader::MessageHeader::ChunkHeaderFormat::Type0:
+                // 11-byte message header.
+                chunk.displacement += 11;
                 for (int i = 0; i < 3; i++)
                 {
                     bTimestamp[i] = data.at(i + baseI);
@@ -130,12 +129,14 @@ namespace RTMP {
                 Utils::BitOperations::bytesToInteger<int>(
                     chunk.messageHeader.timestamp_delta,
                     bTimestamp,
-                    false);
+                    false,
+                    3);
                 // Message length
                 Utils::BitOperations::bytesToInteger<int>(
                     chunk.messageHeader.message_length, 
                     bMessageLength, 
-                    false);
+                    false,
+                    3);
                 // Message type id
                 chunk.messageHeader.message_type_id = data.at(6 + baseI);
                 for (int i = 0; i < 4; i++)
@@ -144,11 +145,15 @@ namespace RTMP {
                 Utils::BitOperations::bytesToInteger<int>(
                     chunk.messageHeader.message_stream_id, 
                     bMessageTypeId,
-                    false);
-                delete &bTimestamp, &bMessageLength, bMessageTypeId;
+                    false,
+                    4);
+                //delete &bTimestamp, &bMessageLength, &bMessageTypeId;
                 break;
+                
 
             case ChunkHeader::MessageHeader::ChunkHeaderFormat::Type1:
+                // 7-byte message header.
+                chunk.displacement += 7;
                 for (int i = 0; i < 3; i++)
                 {
                     bTimestamp[i] = data.at(i + baseI);
@@ -158,24 +163,29 @@ namespace RTMP {
                 Utils::BitOperations::bytesToInteger<int>(
                     chunk.messageHeader.timestamp_delta,
                     bTimestamp,
-                    false);
+                    false,
+                    3);
                 // Message length
                 Utils::BitOperations::bytesToInteger<int>(
                     chunk.messageHeader.message_length, 
                     bMessageLength, 
-                    false);
+                    false,
+                    3);
                 // Message type id
                 chunk.messageHeader.message_type_id = data.at(6 + baseI);
-                delete &bTimestamp, &bMessageLength;
+                //delete &bTimestamp, &bMessageLength;
                 break;
 
             case ChunkHeader::MessageHeader::ChunkHeaderFormat::Type2:
+                // 3-byte message header.
+                chunk.displacement += 3;
                 for (int i = 0; i < 3; i++)
                     bTimestamp[i] = data.at(i + baseI);
-                Utils::BitOperations::bytesToInteger(
+                Utils::BitOperations::bytesToInteger<int>(
                     chunk.messageHeader.timestamp_delta,
                     bTimestamp,
-                    false);
+                    false,
+                    3);
                 break;
 
             case ChunkHeader::MessageHeader::ChunkHeaderFormat::Type3:
@@ -187,25 +197,53 @@ namespace RTMP {
                 // Error
                 break;
         };
-        printf("\nMessage type ID: %i", chunk.messageHeader.message_type_id);
-        printf("\nMessage stream ID: %i", chunk.messageHeader.message_stream_id);
-        printf("\nMessage Timestamp delta: %i", chunk.messageHeader.timestamp_delta);
     }
 
     void Parser::ParseChunkExtendedTimestamp(vector<int>& data, Chunk& chunk)
     {
+        if (!(chunk.messageHeader.timestamp_delta == 0xFFFFFF)) 
+            return;
+        unsigned char bExtendedTimestamp[4];
+        for (int i = 0; i < 4; i++)
+            bExtendedTimestamp[i] = data.at(i + chunk.displacement);
+        
+        Utils::BitOperations::bytesToInteger(
+            chunk.extendedTimestamp,
+            bExtendedTimestamp,
+            false,
+            4); 
 
+        printf("\nExtended Timestamp: %i", chunk.extendedTimestamp);
+        chunk.displacement += 4;
     }
 
     void Parser::ParseChunkData(vector<int>& data, Chunk& chunk) 
     {
+        int size = data.size() - chunk.displacement;
 
+        printf("\nPayload size byte : %i", size);
+
+        unsigned char bData = *(new unsigned char[size]);
+        for (int i = 0; i < size; i++)
+            (&bData)[i] = data.at(i + chunk.displacement);
+        
+        chunk.data = (int*)bData;
+        
     }
 
     void Parser::ParseChunk(vector<int>& data, Chunk& chunk)
     {
         ParseChunkBasicHeader(data, chunk);
         ParseChunkMessageHeader(data, chunk);
+        ParseChunkExtendedTimestamp(data, chunk);
+        ParseChunkData(data, chunk);
+
+        #if (__DEBUG == true)
+        printf("\nMessage timestamp delta: %i", chunk.messageHeader.timestamp_delta);
+        printf("\nMessage type ID: %i", chunk.messageHeader.message_type_id);
+        printf("\nMessage length : %i", chunk.messageHeader.message_length);
+        printf("\nMessage stream ID: %i", chunk.messageHeader.message_stream_id);
+        #endif
     }
 
 }
