@@ -1,5 +1,9 @@
 #pragma once
 #include <cstdint>
+#include <vector>
+#include <random>
+
+using namespace std;
 
 namespace Utils
 {
@@ -24,14 +28,33 @@ namespace Utils
             return result;
         }
 
-        static int concatenateBigEndian(int result, unsigned char* bytes, int count)
+        static vector<unsigned char> BytesToBits(unsigned char* bytes)
         {
-            for (int i = 0; i < count; i++)
-            {
-                result = (result << 8) + bytes[i];
-            }
-            return result;
-        }        
+            vector<unsigned char> bits;
+            for (int n = 0; n < sizeof(bytes); n++)
+                for (int i = 7; i >= 0; i--)
+                    bits.push_back((((1 << (i % 8)) & (bytes[n])) >> (i%8)));
+            return bits;
+        }
+
+        static unsigned int BitsToInteger(vector<unsigned char> bits, int low, int high)
+        {
+            unsigned int f = 0;
+            for (int i = 0; i < (high - low); i++)
+                if(bits.at(i + low))
+                    f |= 1 << i;
+            return f;
+        }
+        
+        static char* generateRandomBytes(int size)
+        {
+            char* arr = new char[size];
+            random_device engine;
+            uniform_int_distribution<unsigned int> distribution(0x00, 0xFF);
+            for (int i = 0; i < size; i++)
+                arr[i] = (unsigned char)distribution(engine);
+            return arr;
+        }       
     };
 
         
