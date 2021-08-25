@@ -92,7 +92,7 @@ namespace RTMP {
 
         // chunk stream id
         unsigned int csid = (unsigned) bZero & 0x3F;
-        chunk.basicHeader.baseID = csid;
+        chunk.basicHeader.baseID = 2;
         // If the chunk stream id is of 0 or 1,
         // it's a 2 or 3 bytes header field.
         if (csid == 0) 
@@ -120,11 +120,16 @@ namespace RTMP {
             case ChunkHeader::MessageHeader::ChunkHeaderFormat::Type0:
                 // 11-byte message header.
                 chunk.displacement += 11;
-                for (int i = 0; i < 3; i++)
+                for (int i = 0; i < 3; i++) //  3 bytes
                 {
                     bTimestamp[i] = data.at(i + baseI);
                     bMessageLength[i] = data.at(i + baseI + 3);
                 }
+                for (int i = 0; i < 4; i++) //  4 bytes
+                    bMessageTypeId[i] = data.at(i + 7 + baseI);
+
+                // Message type id -            1 byte
+                chunk.messageHeader.message_type_id = data.at(6 + baseI);
                 // Timestamp delta
                 Utils::BitOperations::bytesToInteger<int>(
                     chunk.messageHeader.timestamp_delta,
@@ -137,10 +142,6 @@ namespace RTMP {
                     bMessageLength, 
                     false,
                     3);
-                // Message type id
-                chunk.messageHeader.message_type_id = data.at(6 + baseI);
-                for (int i = 0; i < 4; i++)
-                    bMessageTypeId[i] = data.at(i + 7 + baseI);
                 // Message stream id
                 Utils::BitOperations::bytesToInteger<int>(
                     chunk.messageHeader.message_stream_id, 
@@ -224,11 +225,11 @@ namespace RTMP {
 
         printf("\nPayload size byte : %i", size);
 
-        unsigned char bData = *(new unsigned char[size]);
+        unsigned char* bData = new unsigned char[size];
         for (int i = 0; i < size; i++)
-            (&bData)[i] = data.at(i + chunk.displacement);
+            bData[i] = (unsigned)data.at(i + chunk.displacement);
         
-        chunk.data = (int*)bData;
+        chunk.data = bData;
         
     }
 
@@ -248,18 +249,29 @@ namespace RTMP {
         }
         else if (6 >= chunk.messageHeader.message_type_id)
         {
+            int chunksize = 0;
             // Protocol control message.
             switch (chunk.messageHeader.message_type_id)
             {
                 case ProtocolControlMessage::Type::SetChunkSize:
+                    Utils::BitOperations::bytesToInteger(
+                        chunksize, 
+                        chunk.data, 
+                        false, 
+                        chunk.messageHeader.message_length);
+                    printf("\nProtocol control message: Set chunk size %i.", chunksize);
                     break;
                 case ProtocolControlMessage::Type::Abort:
+                    printf("\nProtocol control message: Abort.");
                     break;
                 case ProtocolControlMessage::Type::Acknowledgement:
+                    printf("\nProtocol control message: Acknowledgement.");
                     break;
                 case ProtocolControlMessage::Type::WindowAcknowledgementSize:
+                    printf("\nProtocol control message: Window Acknowledgement size.");
                     break;
                 case ProtocolControlMessage::Type::SetPeerBandwidth:
+                    printf("\nProtocol control message: Set peer Bandwidth.");
                     break;
             };
         }
@@ -269,18 +281,34 @@ namespace RTMP {
             switch (chunk.messageHeader.message_type_id)
             {
                 case Message::Type::AudioMessage:
+                    printf("\n\nAudio message.");
                     break;
                 case Message::Type::VideoMessage:
+                    printf("\n\nVideo message.");
                     break;
                 case Message::Type::AggregateMessage:
+                    printf("\n\nAggregate message.");
                     break;
-                case Message::Type::UserControlMessageEvents:
+                case Message::Type::AMF0CommandMessage:
+                    printf("\n\nAMF0 Command message.");
+                    Utils::AMF0Decoder::DecodeCommand(
+                        chunk.data, 
+                        chunk.messageHeader.message_length);
                     break;
-                case Message::Type::CommandMessage:
+                case Message::Type::AMF3CommandMessage:
+                    printf("\n\nAMF3 Command message.");
                     break;
-                case Message::Type::DataMessage:
+                case Message::Type::AMF0DataMessage:
+                    printf("\n\nAMF0 Data message.");
                     break;
-                case Message::Type::SharedObjectMessage:
+                case Message::Type::AMF3DataMessage:
+                    printf("\n\nAMF3 Data message.");
+                    break;
+                case Message::Type::AMF0SharedObjectMessage:
+                    printf("\n\nAMF0 Shared object message.");
+                    break;
+                case Message::Type::AMF3SharedObjectMessage:
+                    printf("\n\nAMF3 Shared object message.");
                     break;
             }
         }
