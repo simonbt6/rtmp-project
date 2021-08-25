@@ -103,7 +103,7 @@ namespace Utils
                 if (bytes[commandNameMarkerIndex + 1] == 0x00)
                 {
                     commandNameLength = bytes[commandNameMarkerIndex + 2];
-                    printf("\n\nCommand Name: ");
+                    printf("\nCommand Name: ");
                     commandName = Get(
                             bytes, 
                             commandNameLength, 
@@ -118,17 +118,10 @@ namespace Utils
                     transactionIDIndex = commandNameMarkerIndex + commandNameLength + 3;
                     if (bytes[transactionIDIndex] == type_markers::number_marker)
                     {
-                        printf("\n");
                         transactionIDArray = Get(bytes, 8, transactionIDIndex + 1);
-                        for (int i = 0; i < 8; i++)
-                        {
-                            printf("%i ", transactionIDArray[i]);
-                        }
-                        Utils::Math::IE754ToInt(transactionIDArray);
+                        transactionID = Utils::Math::IE754ToInt(transactionIDArray);
 
-                        
-                        //Utils::BitOperations::bytesToInteger(transactionID, new unsigned char[8]{0x3F, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, false, 8);
-                        //printf("\nTransaction ID: %lf", c);
+                        printf("\nTransaction ID: %i", transactionID);
                     }
                 }
 
