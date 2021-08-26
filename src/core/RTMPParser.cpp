@@ -146,7 +146,7 @@ namespace RTMP {
                 Utils::BitOperations::bytesToInteger<int>(
                     chunk.messageHeader.message_stream_id, 
                     bMessageTypeId,
-                    false,
+                    true,
                     4);
                 //delete &bTimestamp, &bMessageLength, &bMessageTypeId;
                 break;
@@ -278,6 +278,7 @@ namespace RTMP {
         // Normal message.
         else
         {
+            Utils::AMF0::Message message;
             switch (chunk.messageHeader.message_type_id)
             {
                 case Message::Type::AudioMessage:
@@ -291,9 +292,10 @@ namespace RTMP {
                     break;
                 case Message::Type::AMF0CommandMessage:
                     printf("\n\nAMF0 Command message.");
-                    Utils::AMF0Decoder::DecodeCommand(
+                    message = Utils::AMF0Decoder::Decode(
                         chunk.data, 
                         chunk.messageHeader.message_length);
+                    printf("\n");
                     break;
                 case Message::Type::AMF3CommandMessage:
                     printf("\n\nAMF3 Command message.");
