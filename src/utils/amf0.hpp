@@ -19,6 +19,7 @@ using namespace std;
 #define MB (1 << 20)
 #define GB (1 << 30)
 
+#define __DEBUG true
 
 
 namespace Utils
@@ -127,7 +128,7 @@ namespace Utils
             typedef struct
             {
                 unsigned char* data;
-                unsigned short int length;
+                unsigned int length;
             } Object;
 
             /**
@@ -160,6 +161,25 @@ namespace Utils
                 unsigned int length;
                 unsigned char* data;
             } LongString;
+
+            typedef struct
+            {
+                Number* numbers;
+                unsigned short numberCount = 0;
+
+                Boolean* booleans;
+                unsigned short booleanCount = 0;
+
+                String* strings;
+                unsigned short stringCount = 0;
+
+                Object* objects;
+                unsigned short objectCount = 0;
+
+                Reference* references;
+                unsigned short referenceCount = 0;
+
+            } Message;
             
     };
     
@@ -237,13 +257,21 @@ namespace Utils
 
             } ITEM;
 
-            static void Decode(unsigned char* bytes, int size)
+            static AMF0::Message Decode(unsigned char* bytes, int size)
             {
                 AMF0::type_markers lastMarker = (AMF0::type_markers)-1;
                 int lastIndex = 0;
                 bool doneWithItem = true;
 
                 int itemCount = 0;
+
+                AMF0::Message message;
+                        
+                vector<AMF0::Number> numbers;
+                vector<AMF0::Boolean> booleans;
+                vector<AMF0::String> strings;
+                vector<AMF0::Object> objects;
+                vector<AMF0::Reference> references;
 
                 while (lastIndex < size -1)
                 {
@@ -258,7 +286,9 @@ namespace Utils
                         else
                         {
                             // Error. Message should start with a command name (ie 0x02).
-                            printf("\nSkipping index %i, string marker not found.", lastIndex);
+                            #if __DEBUG
+                                printf("\nSkipping index %i, string marker not found.", lastIndex);
+                            #endif
                             lastIndex++;
                         }
                     }
@@ -267,7 +297,7 @@ namespace Utils
                         int length;
                         int endIndex = -1;
                         unsigned char* data;
-                        
+
 
                         // Type initialization
                         AMF0::Number number;
@@ -275,7 +305,6 @@ namespace Utils
                         AMF0::String str;
                         AMF0::Object object;
                         AMF0::Reference reference;
-
                         
                         int nextItemMarkerIndex = lastIndex + 1;
                         if ((itemCount > 0) && bytes[nextItemMarkerIndex] < 18)
@@ -284,7 +313,9 @@ namespace Utils
                         }
                         else
                         {
-                            printf("\nError, next byte is not a marker. %X", bytes[nextItemMarkerIndex]);
+                            #if __DEBUG
+                                printf("\nError, next byte is not a marker. %X", bytes[nextItemMarkerIndex]);
+                            #endif
                         }
 
                         switch (lastMarker)
@@ -293,12 +324,13 @@ namespace Utils
                                 length = 8;
                                 number =  DecodeNumber(Get(bytes, length, lastIndex + 1));
                                 lastIndex += 1 + length;
-                                printf("\nNumber value: %d", number.value);
+                                numbers.push_back(number);
                                 break;
 
                             case AMF0::type_markers::boolean_marker:
                                 printf("\nBoolean marker found. %i", lastIndex);
                                 lastIndex = size;
+                                //booleans.push_back(boolean);
                                 break;
 
                             case AMF0::type_markers::string_marker:
@@ -311,7 +343,7 @@ namespace Utils
                                 data = Get(bytes, length, lastIndex + 3);
                                 str = DecodeString(data, length);
                                 lastIndex += length + 2;
-                                printf("\nString value: %s, of length %i", str.value, length);
+                                strings.push_back(str);
                                 break;
 
                             case AMF0::type_markers::object_marker:
@@ -320,12 +352,20 @@ namespace Utils
                                 data = Get(data, (endIndex - lastIndex + 1), lastIndex + 1);
                                 length = endIndex - lastIndex;
                                 lastIndex += endIndex + 1;
-                                printf("\nObject size. %i", length);
+                                object.data = data;
+                                object.length = length;
+                                objects.push_back(object);
                                 break;
 
                             case AMF0::type_markers::reference_marker:
                                 printf("\nReference marker found. %i", lastIndex);
                                 lastIndex = size;
+                                // references.push_back(reference);
+                                break;
+                            
+                            case AMF0::null_marker:
+                                // Ignores  null markers for now.
+                                lastIndex++;
                                 break;
 
                             default:
@@ -336,63 +376,21 @@ namespace Utils
                         };
                         itemCount++;
                     }
+
                 }
+                // Assignations
+                message.numbers = numbers.data();
+                message.numberCount = numbers.size();
+                message.booleans = booleans.data();
+                message.booleanCount = booleans.size();
+                message.strings = strings.data();
+                message.stringCount = strings.size();
+                message.objects = objects.data();
+                message.booleanCount = objects.size();
+                message.references = references.data();
+                message.referenceCount = references.size();
+                return message;
             }
-            static void DecodeCommand(
-                unsigned char* bytes, 
-                int size
-                /*ClientCommand& command*/)
-            {
-
-                vector<int> markerIndexes;
-
-                /**
-                 * Command Name
-                 **/
-                int commandNameMarkerIndex = 
-                    FindIndex(bytes, size, AMF0::type_markers::string_marker);
-                int commandNameLength;
-                unsigned char* commandName;
-
-                /**
-                 * Transaction ID
-                 **/
-                int transactionID;
-                int transactionIDIndex;
-                unsigned char* transactionIDArray;
-
-                /**
-                 * Object
-                 **/
-                unsigned char* data; 
-
-                if (bytes[commandNameMarkerIndex + 1] == 0x00)
-                {
-                    commandNameLength = bytes[commandNameMarkerIndex + 2];
-                    printf("\nCommand Name: ");
-                    commandName = Get(
-                            bytes, 
-                            commandNameLength, 
-                            commandNameMarkerIndex + 3);
-                    for (int i = 0; i < commandNameLength; i++)
-                    {
-                        printf("%c", commandName[i]);
-                    }
-                    /**
-                     * Transaction ID
-                     **/
-                    transactionIDIndex = commandNameMarkerIndex + commandNameLength + 3;
-                    if (bytes[transactionIDIndex] == AMF0::type_markers::number_marker)
-                    {
-                        transactionIDArray = Get(bytes, 8, transactionIDIndex + 1);
-                        transactionID = Utils::Math::IE754ToDouble(transactionIDArray);
-
-                        printf("\nTransaction ID: %i", transactionID);
-                    }
-                }
-
-                printf("\n");
-            };
     };
 
     
