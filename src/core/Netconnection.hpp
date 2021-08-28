@@ -12,39 +12,6 @@
 
 using namespace std;
 
-struct ServerCommand
-{
-    std::string name;
-    unsigned int transactionId;
-    struct Properties
-    {
-
-    };
-    struct Information
-    {
-
-    };
-};
-
-struct ClientCommand
-{
-    std::string name;
-    const unsigned int transactionId = 1;
-    char* optionalUserArguments;
-    struct CommandObject
-    {
-        std::string app;
-        std::string flashver;
-        std::string swfUrl;
-        std::string tcUrl;
-        std::string pageUrl;
-        bool tcUrl;
-        Netconnection::AudioCodecs audioCodecs;
-        Netconnection::VideoCodecs videoCodecs;
-        Netconnection::ObjectEncoding objectEncoding;
-
-    };
-};
 enum PropertyType
 {
     app,
@@ -88,6 +55,41 @@ class Netconnection
             "pageUrl",
             "objectEncoding"
         };
+
+        enum CommandType
+        {
+            Null,
+            Connect,
+            ConnectResponse,
+            Call,
+            CreateStream,
+            CreateStreamResponse,
+            OnStatus,
+            Play,
+            Play2,
+            DeleteStream,
+            ReceiveVideo,
+            Publish,
+            Seek,
+            Pause
+        };  
+        
+        static inline map<string, CommandType> CommandLinker = {
+            {"connect", CommandType::Connect},
+            {"connectResponse", CommandType::ConnectResponse},
+            {"call", CommandType::Call},
+            {"createStream", CommandType::CreateStream},
+            {"createStreamResponse", CommandType::CreateStreamResponse},
+            {"onStatus", CommandType::OnStatus},
+            {"play", CommandType::Play},
+            {"play2", CommandType::Play2},
+            {"deleteStream", CommandType::DeleteStream},
+            {"receiveVideo", CommandType::ReceiveVideo},
+            {"publish", CommandType::Publish},
+            {"seek", CommandType::Seek},
+            {"pause", CommandType::Pause}
+        };
+
         struct Command
         {
             /**
@@ -109,6 +111,7 @@ class Netconnection
              **/
             Object* CommandObject;
         };
+
         struct Connect : public Command
         {
             /**
@@ -128,6 +131,7 @@ class Netconnection
              **/
             Object OptionalUserArguments;
         };
+
         struct ConnectResponse : public Command
         {
             /**
@@ -160,6 +164,7 @@ class Netconnection
              **/
             Object Information;
         };
+
         struct Call : public Command
         {
             /**
@@ -182,6 +187,7 @@ class Netconnection
              **/
             Object OptionalUserArguments;
         };
+
         struct CallResponse : public Command
         {
             /**
@@ -207,12 +213,12 @@ class Netconnection
             Object Response;
         };
 
-        struct createStream : public Command
+        struct CreateStream : public Command
         {
 
         };
 
-        struct createStreamResponse : public Command
+        struct CreateStreamResponse : public Command
         {
             /**
              * Stream ID
@@ -222,7 +228,7 @@ class Netconnection
             unsigned int StreamID;
         };
 
-        struct onStatus : public Command
+        struct OnStatus : public Command
         {
             Object* CommandObject = NULL;
         };
@@ -311,7 +317,7 @@ class Netconnection
             bool BoolFlag = 0;
         };
 
-        struct Public : public Command
+        struct Publish : public Command
         {
             /**
              * Transaction ID is set to 0.
@@ -407,13 +413,9 @@ class Netconnection
             int milliseconds = 0;
         };        
 
-        /**
-         * Connect command
-         * - Command name: String
-         * - Transaction ID: Number
-         * - Command object: Object
-         * - Optional user arguments: Object
-         **/
+
+
+
     public:
         
         /**
