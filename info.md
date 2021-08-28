@@ -56,3 +56,77 @@
         - Channels: stereo (1)
             - xxxx xxx1
     - Audio data: 00121056e500
+
+## createstream.bin
+- RTMP Header
+    - Format: 1
+        - 00xx xxxx
+    - Chunk Stream ID: 3
+        - xx00 0011
+    - Timestamp delta: 0
+    - Timestamp: 0
+    - Body size: 25
+    - Type ID: AMF0 Command (0x14)
+- RTMP Body
+    - String 'createStream'
+        - AMF0 type: String (0x02)
+        - String Length: 12
+        - String: createStream
+    - Number 4
+        - AMF0 type: Number (0x00)
+        - Number: 4
+    - Null
+        - AMF0 type: Null (0x05)
+
+## _result.bin
+- RTMP Header
+    - Format: 0
+        - 00xx xxxx
+    - Chunk Stream ID: 3
+        - xx00 0011
+    - Timestamp: 0
+    - Body size: 29
+    - Type ID: AMF0 Command (0x14)
+    - Stream ID: 0
+- RTMP Body
+    - String '_result'
+        - AMF0 type: String (0x02)
+        - String Length: 7
+        - String: _result
+    - Number 4
+        - AMF0 type: Number (0x00)
+        - Number: 4
+    - Null
+        - AMF0 type: Null (0x05)
+    - Number 1
+        - AMF0 type: Number (0x00)
+        - Number: 1
+
+## publishtest.bin
+- RTMP Header
+    - Format: 0
+        - 00xx xxxx
+    - Chunk Stream ID: 4
+        - xx00 0100
+    - Timestamp: 0
+    - Body size: 34
+    - Type ID: AMF0 Command (0x14)
+    - Stream ID: 1
+- RTMP Body
+    - String 'publish'
+        - AMF0 type: String (0x02)
+        - String Length: 7
+        - String: publish
+    - Number 5
+        - AMF0 type: Number (0x00)
+        - Number: 5
+    - Null
+        -AMF0 type: Null (0x05)
+    - String 'test'
+        - AMF0 type: String (0x02)
+        - String Length: 4
+        - String: test
+    - String 'live'
+        - AMF0 type: String (0x02)
+        - String Length: 4
+        - String: live
