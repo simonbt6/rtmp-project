@@ -7,6 +7,7 @@
  **/
 #include "Bit.hpp"
 #include <vector>
+#include <cmath>
 
 namespace Utils 
 {
@@ -22,12 +23,9 @@ namespace Utils
                     exponent, 
                     sign = (bits[0])? -1 : 1, 
                     bias = 1023;                
-
-                mantissa = BitOperations::BitsToInteger(bits, 12, 64);
+                mantissa = BitOperations::BitsToInteger(bits, 12, 63);
                 exponent = BitOperations::BitsToInteger(bits, 1, 11);
-
-                double dValue = sign * pow(2, (exponent - bias)) * (1 + mantissa);
-
+                double dValue = sign * std::pow(2, (exponent - bias)) * (1 + mantissa);
                 return 
                     (dValue == std::numeric_limits<double>::infinity())? 1 : dValue;
             }
