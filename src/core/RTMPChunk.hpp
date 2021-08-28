@@ -107,6 +107,8 @@ namespace RTMP
                 Type3
             };
             
+            int displacement = 0;
+
             /**
              * Size: 3 bytes.
              * 
@@ -153,6 +155,8 @@ namespace RTMP
      **/
     struct Chunk
     {
+        int displacement = 0;
+
         /**
          * Basic Header
          * Size: 1 to 3 bytes.
@@ -188,7 +192,7 @@ namespace RTMP
          * This field is present in Type 3 chunks when the most recent Type 0, 1 or 2 chunk
          * for the same chunk stream ID indicated the presence of an extended timestamp field.
          **/
-        int* extendedTimestamp;
+        int extendedTimestamp;
 
         /**
          * Chunk Data
@@ -196,7 +200,7 @@ namespace RTMP
          * 
          * The payload of this chunk, up to the configured maximum chunk size.
          **/
-        int* data;
+        unsigned char* data = nullptr;
 
     };
 }
