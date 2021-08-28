@@ -14,7 +14,7 @@ namespace Utils
     {
         public:
 
-            static int IE754ToInt(unsigned char* bytes)
+            static double IE754ToDouble(unsigned char* bytes)
             {
                 vector<unsigned char> bits = BitOperations::BytesToBits(bytes);
                 unsigned int
