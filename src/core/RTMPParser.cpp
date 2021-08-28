@@ -114,7 +114,7 @@ namespace RTMP {
         chunk.displacement += baseI;
         unsigned char   bTimestamp[3], 
                         bMessageLength[3], 
-                        bMessageTypeId[4]; 
+                        bMessageStreamID[4]; 
         switch (fmt)
         {
             case ChunkHeader::MessageHeader::ChunkHeaderFormat::Type0:
@@ -126,7 +126,7 @@ namespace RTMP {
                     bMessageLength[i] = data.at(i + baseI + 3);
                 }
                 for (int i = 0; i < 4; i++) //  4 bytes
-                    bMessageTypeId[i] = data.at(i + 7 + baseI);
+                    bMessageStreamID[i] = data.at(i + 7 + baseI);
 
                 // Message type id -            1 byte
                 chunk.messageHeader.message_type_id = data.at(6 + baseI);
@@ -145,10 +145,9 @@ namespace RTMP {
                 // Message stream id
                 Utils::BitOperations::bytesToInteger<int>(
                     chunk.messageHeader.message_stream_id, 
-                    bMessageTypeId,
+                    bMessageStreamID,
                     true,
                     4);
-                //delete &bTimestamp, &bMessageLength, &bMessageTypeId;
                 break;
                 
 
@@ -174,7 +173,6 @@ namespace RTMP {
                     3);
                 // Message type id
                 chunk.messageHeader.message_type_id = data.at(6 + baseI);
-                //delete &bTimestamp, &bMessageLength;
                 break;
 
             case ChunkHeader::MessageHeader::ChunkHeaderFormat::Type2:
@@ -195,8 +193,8 @@ namespace RTMP {
                 break;
 
             default:
-                printf("\nError: No message header type matching.");
                 // Error
+                printf("\nError: No message header type matching.");
                 break;
         };
     }
@@ -315,11 +313,12 @@ namespace RTMP {
             }
         }
 
-        #if (__DEBUG == true)
+        #if __DEBUG
         printf("\nMessage timestamp delta: %i", chunk.messageHeader.timestamp_delta);
         printf("\nMessage type ID: %i", chunk.messageHeader.message_type_id);
         printf("\nMessage length : %i", chunk.messageHeader.message_length);
-        printf("\nMessage stream ID: %i", chunk.messageHeader.message_stream_id);
+        if (chunk.basicHeader.fmt == ChunkHeader::MessageHeader::ChunkHeaderFormat::Type0)
+            printf("\nMessage stream ID: %i", chunk.messageHeader.message_stream_id);
         #endif
     }
 
