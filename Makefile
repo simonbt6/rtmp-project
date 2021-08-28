@@ -1,6 +1,6 @@
 compile_test_windows:
 	echo "Compiling RTMP lib for Windows..."
-	cl test/test.cpp src/core/RTMPParser.cpp src/core/Netconnection.cpp src/core/Netstream.cpp /o'bin\test.exe' /EHsc
+	cl test/test.cpp /std:c++17 src/core/RTMPParser.cpp src/core/Netconnection.cpp src/core/Netstream.cpp /o'bin\test.exe' /EHsc
 	rm Netstream.obj Netconnection.obj test.obj RTMPParser.obj
 
 compile_server_windows:
