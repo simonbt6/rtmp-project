@@ -10,6 +10,8 @@
 #include <string>
 #include <map>
 
+using namespace std;
+
 struct ServerCommand
 {
     std::string name;
@@ -27,7 +29,7 @@ struct ServerCommand
 struct ClientCommand
 {
     std::string name;
-    unsigned int transactionId:1;
+    const unsigned int transactionId = 1;
     char* optionalUserArguments;
     struct CommandObject
     {
@@ -43,10 +45,377 @@ struct ClientCommand
 
     };
 };
+enum PropertyType
+{
+    app,
+    flashver,
+    swtUrl,
+    tcUrl,
+    fpad,
+    audioCodecs,
+    videoCodecs,
+    videoFunction,
+    pageUrl,
+    objectEncoding
+};
+
+struct Property 
+{
+    const PropertyType type;
+    ~Property() = default;
+};
+template<typename T>
+struct Field: Property
+{
+    T m_Value;
+};
+
+
 
 class Netconnection
 {
     public:
+        typedef map<PropertyType, Property*> Object;
+        const string propertyName[10] = {
+            "app",
+            "flashver",
+            "swtUrl",
+            "tcUrl",
+            "fpad",
+            "audioCodecs",
+            "videoCodecs",
+            "videoFunction",
+            "pageUrl",
+            "objectEncoding"
+        };
+        struct Command
+        {
+            /**
+             * Command Name
+             * 
+             * Name of the command.
+             **/
+            string CommandName;
+            
+            /**
+             * Transaction ID
+             **/
+            unsigned short TransactionID;
+
+            /**
+             * Command Object
+             * 
+             * Command information object which has name-value pairs.
+             **/
+            Object* CommandObject;
+        };
+        struct Connect : public Command
+        {
+            /**
+             * Command Name
+             * 
+             * Name of the command. Set to 'connect'.
+             **/
+            string CommandName = "connect";
+
+            /**
+             * Always set to 1.
+             **/
+            unsigned short TransactionID = 1;
+
+            /**
+             * Any optional arguments to be provided.
+             **/
+            Object OptionalUserArguments;
+        };
+        struct ConnectResponse : public Command
+        {
+            /**
+             * Command Name
+             * 
+             * _result or _error; indicates whether the response is result or error.
+             **/
+            string CommandName;
+
+            /**
+             * Transaction ID
+             * 
+             * Transaction ID is 1 for connect responses.
+             **/
+            unsigned short TransactionID = 1;
+
+            /**
+             * Properties
+             * 
+             * Name-value pairs that describe the properties of the connection.
+             **/
+            Object Properties;
+
+            /**
+             * Information
+             * 
+             * Name-value pairs that describe the response from|the server.
+             * 'code', 'level' or 'description' are name of few among such
+             * information.
+             **/
+            Object Information;
+        };
+        struct Call : public Command
+        {
+            /**
+             * Procedure Name
+             * 
+             * Name of the remote procedure that is called.
+             **/
+            string CommandName;
+            
+            /**
+             * Transaction ID
+             * 
+             * If a response is expected, we give a transaction ID.
+             * Else, we pass the value of 0.
+             **/
+            unsigned short TransactionID;
+
+            /**
+             * Any optional arguments to be provided.
+             **/
+            Object OptionalUserArguments;
+        };
+        struct CallResponse : public Command
+        {
+            /**
+             * Transaction ID
+             * 
+             * ID of the command, to which the response belongs.
+             **/
+            unsigned short TransactionID;
+
+            /**
+             * Command Object
+             * 
+             * If there exists any command info, this is set.
+             * Else, this is set to null type.
+             **/
+            Object* CommandObject;
+            
+            /**
+             * Response
+             * 
+             * Response from the method called.
+             **/
+            Object Response;
+        };
+
+        struct createStream : public Command
+        {
+
+        };
+
+        struct createStreamResponse : public Command
+        {
+            /**
+             * Stream ID
+             * 
+             * The return value is either a stream ID or an error information object.
+             **/
+            unsigned int StreamID;
+        };
+
+        struct onStatus : public Command
+        {
+            Object* CommandObject = NULL;
+        };
+
+        struct Play : public Command
+        {
+            Object* CommandObject = NULL;
+            /**
+             * Stream Name
+             * 
+             * Name of the stream to play.
+             * To play video (FLV) files, specify the name of the stream without 
+             * extension (for example, "sample"). To play back MP3 or ID3 tags,
+             * you must precede the stream name with mp3: (for example, "mp3:sample".
+             * To play H.264/AAC files, you must precede the stream name with mp4:
+             * and specify the file extension. For example: "mp4:sample.m4v").
+             **/
+            string StreamName;
+
+            /**
+             * Start
+             * 
+             * An optional parameter that specifies the start time in seconds. The default
+             * value is -2, which means the subscriber first tries to play the live stream
+             * specified in the stream name field.
+             **/
+            int Start = -2;
+
+            /**
+             * Duration
+             * 
+             * An optional parameter that specifies the duration of playback in seconds. 
+             * The default value is -1. The -1 value means a live stream is played until
+             * it ends. 
+             **/
+            int duration = -1;
+
+            /**
+             * Reset
+             * 
+             * An optional Boolean value or number that specifies whether to flush any
+             * previous playlist.
+             **/
+            bool Reset = 0;
+        };
+
+        struct Play2 : public Command
+        {
+            Object* CommandObject = NULL;
+
+            /**
+             * Parameters
+             * 
+             * An AMF encoded object whose properties are the public properties described
+             * for the flash.net.NetStreamPlayOptions ActionScript object.
+             **/
+            Object parameters;
+        };
+
+        struct DeleteStream : public Command
+        {
+            Object* Command = NULL;
+
+            /**
+             * Bool Flag
+             * 
+             * True or false to indicate whether to receive audio or not.
+             **/
+            bool BoolFlag = 0;
+        };
+
+        struct ReceiveVideo : public Command
+        {   
+            /**
+             * Command Object
+             * 
+             * Command information object does not exist. Set to null type.
+             **/
+            Object* CommandObject = NULL;
+
+            /**
+             * Bool Flag
+             * 
+             * True or false to indicate whether to receive video or not.
+             **/
+            bool BoolFlag = 0;
+        };
+
+        struct Public : public Command
+        {
+            /**
+             * Transaction ID is set to 0.
+             **/
+            unsigned int TransactionID = 0;
+
+            /**
+             * Command Object
+             * 
+             * Command information object does not exist. Set to null type.
+             **/
+            Object* CommandObject = NULL;
+
+            /**
+             * Publishing Name
+             * 
+             * Name with which the stream is published.
+             **/
+            string PublishingName;
+
+            /**
+             * Publishing Type
+             * 
+             * Type of publishing. Set to "live", "record" or "append".
+             * 
+             * Record: The stream is published and the data is stored on the server
+             * in a subdirectory within the directory that contains the server application.
+             * If the file already exists, it is overriden.
+             * 
+             * Append: The stream is published and the data is appended to a file. If no
+             * file is found, it is created.
+             * 
+             * Live: Live data is published without recording it in a file.
+             **/
+            string PublishingType;
+        };  
+
+        struct Seek : public Command
+        {
+            /**
+             * Transaction ID
+             * 
+             * Transaction ID is set to 0.
+             **/
+            unsigned int TransactionID = 0;
+
+            /**
+             * Command Object
+             * 
+             * There is no command information object for this command. Set to null type.
+             **/
+            Object* CommandObject = NULL;
+
+            /**
+             * Milliseconds
+             * 
+             * Number of milliseconds to seek into the playlist.
+             **/
+            int milliseconds = 0;
+        };
+
+        struct Pause : public Command
+        {
+            /**
+             * Transaction ID
+             * 
+             * Transaction ID is set to 0.
+             **/
+            unsigned int TransactionID = 0;
+
+            /**
+             * Command Object
+             * 
+             * Command information object does not exist. Set to null type.
+             **/
+            Object* CommandObject = NULL;
+
+            /**
+             * Pause/Unpause Flag
+             * 
+             * True or false, to indicate pausing or resuming play.
+             **/
+            bool pause = false;
+
+            /**
+             * Milliseconds
+             * 
+             * Number of milliseconds at which the stream is paused or play resumed.
+             * This is the current stream time at the Client when stream was paused.
+             * When the playback is resumed, the server will only send messages with
+             * timestamps greater than this value.
+             **/
+            int milliseconds = 0;
+        };        
+
+        /**
+         * Connect command
+         * - Command name: String
+         * - Transaction ID: Number
+         * - Command object: Object
+         * - Optional user arguments: Object
+         **/
+    public:
+        
         /**
          * Connect command:
          * 
