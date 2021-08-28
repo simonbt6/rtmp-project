@@ -17,14 +17,13 @@ namespace Utils
             bool little_endian = true,
             int count = 4)
         {
-            
             result = 0;
             if (little_endian)
                 for (int n = count; n >= 0; n--)
-                result = (result << 8) +bits[ n ];
+                result = (result << 8) + bits[ n ];
             else
                 for (unsigned n = 0; n < count; n++)
-                result = (result << 8) +bits[ n ];
+                result = (result << 8) + bits[ n ];
             return result;
         }
 
@@ -40,7 +39,7 @@ namespace Utils
         static unsigned int BitsToInteger(vector<unsigned char> bits, int low, int high)
         {
             unsigned int f = 0;
-            for (int i = 0; i < (high - low); i++)
+            for (int i = 0; i < (high - low + 1); i++)
                 if(bits.at(i + low))
                     f |= 1 << i;
             return f;
