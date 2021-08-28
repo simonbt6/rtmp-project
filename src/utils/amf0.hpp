@@ -1,23 +1,27 @@
+/**
+ * Author: Simon Brisebois-Therrien
+ * Date: 2021-08-24
+ **/
+
 #pragma once
+
 #include <iostream>
 #include <string>
 #include <vector>
 #include <sys/types.h>
 #include <iomanip>
 #include <string>
-//#include "../core/Netconnection.hpp"
+
 #include "Bit.hpp"
 #include "Math.hpp"
 #include "FormatedPrint.hpp"
+#include "../core/Netconnection.hpp"
+
 using namespace std;
 
 /**
  * Type defintions
  **/
-
-#define KB (1 << 10)
-#define MB (1 << 20)
-#define GB (1 << 30)
 
 #define __DEBUG true
 
@@ -216,6 +220,7 @@ namespace Utils
                 char* strValue = new char[length];
                 for (int i = 0; i < length; i++)
                     strValue[i] = bytes[i];
+                printf("\nString value: %s", strValue);
                 return AMF0::String{
                     strValue,
                     length,
@@ -247,21 +252,29 @@ namespace Utils
                 };
             }
 
-            
+            static Netconnection::CommandType FindCommandType(string commandName)
+            {
+                try
+                {
+                    return Netconnection::CommandLinker.at(commandName);
+                }
+                catch(std::out_of_range& e)
+                {
+                    std::cerr << "\nOut of range error: " << e.what() << std::endl;
+                }
+
+                return Netconnection::CommandType::Null;
+            }
 
 
         public:
-
-            typedef struct
-            {
-
-            } ITEM;
 
             static AMF0::Message Decode(unsigned char* bytes, int size)
             {
                 AMF0::type_markers lastMarker = (AMF0::type_markers)-1;
                 int lastIndex = 0;
                 bool doneWithItem = true;
+                bool firstElement = false;
 
                 int itemCount = 0;
 
@@ -273,6 +286,13 @@ namespace Utils
                 vector<AMF0::Object> objects;
                 vector<AMF0::Reference> references;
 
+                Netconnection::Command* command;
+                Netconnection::CommandType commandType = Netconnection::CommandType::Null;
+
+
+
+                
+
                 while (lastIndex < size -1)
                 {
                     // Looking for beginning marker
@@ -282,6 +302,7 @@ namespace Utils
                         {
                             // Found begin marker / string for command name.
                             lastMarker = AMF0::type_markers::string_marker;
+                            firstElement = true;
                         }
                         else
                         {
@@ -297,6 +318,8 @@ namespace Utils
                         int length;
                         int endIndex = -1;
                         unsigned char* data;
+
+                        string commandName;
 
 
                         // Type initialization
@@ -322,9 +345,11 @@ namespace Utils
                         {
                             case AMF0::type_markers::number_marker:
                                 length = 8;
-                                number =  DecodeNumber(Get(bytes, length, lastIndex + 1));
+                                data = Get(bytes, length, lastIndex + 2);
+                                number =  DecodeNumber(data);
                                 lastIndex += 1 + length;
                                 numbers.push_back(number);
+                                cout << "\nNumber value: " << number.value;
                                 break;
 
                             case AMF0::type_markers::boolean_marker:
@@ -342,6 +367,8 @@ namespace Utils
                                     2);
                                 data = Get(bytes, length, lastIndex + 3);
                                 str = DecodeString(data, length);
+                                if (firstElement)
+                                    commandName = str.value;
                                 lastIndex += length + 2;
                                 strings.push_back(str);
                                 break;
@@ -375,6 +402,17 @@ namespace Utils
                                 break;
                         };
                         itemCount++;
+
+                        if (firstElement)
+                        {
+                            // Find message type
+                            printf("\nCommand name: %s", commandName);
+                            Netconnection::CommandType commandType = FindCommandType(commandName);
+                            if (commandType == Netconnection::CommandType::Null)
+                                printf("\nError, could not find a command type matching command name: %s", commandName);
+                            printf("\nFound matching command type: %i", commandType);
+                            firstElement = false;
+                        }
                     }
 
                 }
