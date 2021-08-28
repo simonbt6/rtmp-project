@@ -37,7 +37,24 @@ struct Field: Property
     T m_Value;
 };
 
-
+enum CommandType
+{
+    Null,
+    Connect,
+    ConnectResponse,
+    Call,
+    CallResponse,
+    CreateStream,
+    CreateStreamResponse,
+    OnStatus,
+    Play,
+    Play2,
+    DeleteStream,
+    ReceiveVideo,
+    Publish,
+    Seek,
+    Pause
+}; 
 
 class Netconnection
 {
@@ -56,28 +73,13 @@ class Netconnection
             "objectEncoding"
         };
 
-        enum CommandType
-        {
-            Null,
-            Connect,
-            ConnectResponse,
-            Call,
-            CreateStream,
-            CreateStreamResponse,
-            OnStatus,
-            Play,
-            Play2,
-            DeleteStream,
-            ReceiveVideo,
-            Publish,
-            Seek,
-            Pause
-        };  
+ 
         
         static inline map<string, CommandType> CommandLinker = {
             {"connect", CommandType::Connect},
             {"connectResponse", CommandType::ConnectResponse},
             {"call", CommandType::Call},
+            {"callResponse", CommandType::CallResponse},
             {"createStream", CommandType::CreateStream},
             {"createStreamResponse", CommandType::CreateStreamResponse},
             {"onStatus", CommandType::OnStatus},
@@ -90,8 +92,13 @@ class Netconnection
             {"pause", CommandType::Pause}
         };
 
+
         struct Command
         {
+            /**
+             * Command Type
+             **/
+            CommandType type = CommandType::Null;
             /**
              * Command Name
              * 
@@ -115,6 +122,11 @@ class Netconnection
         struct Connect : public Command
         {
             /**
+             * Command Type
+             **/
+            CommandType type = CommandType::Connect;
+
+            /**
              * Command Name
              * 
              * Name of the command. Set to 'connect'.
@@ -134,6 +146,11 @@ class Netconnection
 
         struct ConnectResponse : public Command
         {
+            /**
+             * Command Type
+             **/
+            CommandType type = CommandType::ConnectResponse;
+
             /**
              * Command Name
              * 
@@ -168,6 +185,11 @@ class Netconnection
         struct Call : public Command
         {
             /**
+             * Command Type
+             **/
+            CommandType type = CommandType::Call;
+            
+            /**
              * Procedure Name
              * 
              * Name of the remote procedure that is called.
@@ -190,6 +212,11 @@ class Netconnection
 
         struct CallResponse : public Command
         {
+            /**
+             * Command Type
+             **/
+            CommandType type = CommandType::CallResponse;
+            
             /**
              * Transaction ID
              * 
@@ -215,11 +242,38 @@ class Netconnection
 
         struct CreateStream : public Command
         {
+            /**
+             * Command Type
+             **/
+            CommandType type = CommandType::CreateStream;
 
+            /**
+             * Command Name
+             **/   
+            string CommandName = "createStream";
+
+            /**
+             * Transaction ID
+             * 
+             * Transaction ID of the command.
+             **/
+            unsigned short TransactionID;
         };
 
         struct CreateStreamResponse : public Command
         {
+            /**
+             * Command Type
+             **/
+            CommandType type = CommandType::CreateStreamResponse;
+
+            /**
+             * Command Name
+             * 
+             * _result or _error; indicates whether the response is result or error.
+             **/
+            string CommandName;
+            
             /**
              * Stream ID
              * 
@@ -230,12 +284,53 @@ class Netconnection
 
         struct OnStatus : public Command
         {
+            /**
+             * Command Type
+             **/
+            CommandType type = CommandType::OnStatus;
+            
+            /**
+             * Command Name
+             **/
+            string CommandName;
+
+            /**
+             * Transaction ID
+             **/
+            unsigned short TransactionID = 0;
+
+            /**
+             * Command Object
+             * 
+             * There is no command object for onStatus messages.
+             **/
             Object* CommandObject = NULL;
         };
 
         struct Play : public Command
         {
+            /**
+             * Command Type
+             **/
+            CommandType type = CommandType::Play;
+
+            /**
+             * Command Name
+             **/
+            string CommandName = "play";
+
+            /**
+             * Transaction ID
+             **/
+            unsigned short TransactionID = 0;
+            
+            /**
+             * Command Object
+             * 
+             * Command information does not exist. Set to null type.
+             **/
             Object* CommandObject = NULL;
+
             /**
              * Stream Name
              * 
@@ -277,6 +372,26 @@ class Netconnection
 
         struct Play2 : public Command
         {
+            /**
+             * Command Type
+             **/
+            CommandType type = CommandType::Play2;
+
+            /**
+             * Command Name
+             **/
+            string CommandName = "play2";
+
+            /**
+             * Transaction ID
+             **/
+            unsigned short TransactionID = 0;
+            
+            /**
+             * Command Object
+             * 
+             * 
+             **/
             Object* CommandObject = NULL;
 
             /**
@@ -290,7 +405,27 @@ class Netconnection
 
         struct DeleteStream : public Command
         {
-            Object* Command = NULL;
+            /**
+             * Command Type
+             **/
+            CommandType type = CommandType::DeleteStream;
+
+            /**
+             * Command Name
+             **/
+            string CommandName = "deleteStream";
+
+            /**
+             * Transaction ID
+             **/
+            unsigned short TransactionID = 0;
+
+            /**
+             * Command Object
+             * 
+             * Command information object does not exist. Set to null type.
+             **/
+            Object* CommandObject = NULL;
 
             /**
              * Bool Flag
@@ -302,6 +437,21 @@ class Netconnection
 
         struct ReceiveVideo : public Command
         {   
+            /**
+             * Command Type
+             **/
+            CommandType type = CommandType::ReceiveVideo;
+
+            /**
+             * Command Name
+             **/
+            string CommandName = "receiveVideo";
+
+            /**
+             * Transaction ID
+             **/
+            unsigned short TransactionID = 0;
+            
             /**
              * Command Object
              * 
@@ -319,6 +469,16 @@ class Netconnection
 
         struct Publish : public Command
         {
+            /**
+             * Command Type
+             **/
+            CommandType type = CommandType::Publish;
+            
+            /**
+             * Command Name
+             **/
+            string CommandName = "publish";
+
             /**
              * Transaction ID is set to 0.
              **/
@@ -358,6 +518,16 @@ class Netconnection
         struct Seek : public Command
         {
             /**
+             * Command Type
+             **/
+            CommandType type = CommandType::Seek;
+
+            /**
+             * Command Name
+             **/
+            string CommandName = "seek"; 
+            
+            /**
              * Transaction ID
              * 
              * Transaction ID is set to 0.
@@ -381,6 +551,16 @@ class Netconnection
 
         struct Pause : public Command
         {
+            /**
+             * Command Type
+             **/
+            CommandType type = CommandType::Pause;
+
+            /**
+             * Command Name
+             **/
+            string CommandName = "pause";
+            
             /**
              * Transaction ID
              * 
@@ -415,6 +595,61 @@ class Netconnection
 
 
 
+        Command& GetCommandStruct(CommandType type)
+        {
+            switch (type)
+            {
+                case CommandType::Null:
+                    return Command(); 
+                    break;
+                case CommandType::Connect:
+                    return Connect();
+                    break;
+                case CommandType::ConnectResponse:
+                    return ConnectResponse();
+                    break;
+                case CommandType::Call:
+                    return Call();
+                    break;
+                case CommandType::CallResponse:
+                    return CallResponse();
+                    break;
+                case CommandType::CreateStream:
+                    return CreateStream();
+                    break;
+                case CommandType::CreateStreamResponse:
+                    return CreateStreamResponse();
+                    break;
+                case CommandType::OnStatus:
+                    return OnStatus();
+                    break;
+                case CommandType::Play:
+                    return Play();
+                    break;
+                case CommandType::Play2:
+                    return Play2();
+                    break;
+                case CommandType::DeleteStream:
+                    return DeleteStream();
+                    break;
+                case CommandType::ReceiveVideo:
+                    return ReceiveVideo();
+                    break;
+                case CommandType::Publish:
+                    return Publish();
+                    break;
+                case CommandType::Seek:
+                    return Seek();
+                    break;
+                case CommandType::Pause:
+                    return Pause();
+                    break;
+                default:
+                    return Command();
+                    break;
+                
+            }
+        }
 
     public:
         

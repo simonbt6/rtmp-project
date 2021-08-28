@@ -252,7 +252,7 @@ namespace Utils
                 };
             }
 
-            static Netconnection::CommandType FindCommandType(string commandName)
+            static CommandType FindCommandType(string commandName)
             {
                 try
                 {
@@ -263,7 +263,7 @@ namespace Utils
                     std::cerr << "\nOut of range error: " << e.what() << std::endl;
                 }
 
-                return Netconnection::CommandType::Null;
+                return CommandType::Null;
             }
 
 
@@ -287,7 +287,7 @@ namespace Utils
                 vector<AMF0::Reference> references;
 
                 Netconnection::Command* command;
-                Netconnection::CommandType commandType = Netconnection::CommandType::Null;
+                CommandType commandType = CommandType::Null;
 
 
 
@@ -407,8 +407,8 @@ namespace Utils
                         {
                             // Find message type
                             printf("\nCommand name: %s", commandName);
-                            Netconnection::CommandType commandType = FindCommandType(commandName);
-                            if (commandType == Netconnection::CommandType::Null)
+                            CommandType commandType = FindCommandType(commandName);
+                            if (commandType == CommandType::Null)
                                 printf("\nError, could not find a command type matching command name: %s", commandName);
                             printf("\nFound matching command type: %i", commandType);
                             firstElement = false;
