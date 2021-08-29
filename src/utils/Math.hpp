@@ -13,8 +13,7 @@ namespace Utils
 {
     class Math
     {
-        public:
-
+        private:
             static double CalculateMantissa(vector<unsigned char>& bits, int low, int high)
             {
                 double mantissa = 0.00;
@@ -22,6 +21,9 @@ namespace Utils
                     mantissa += ((double)(bits.at(i + low)))*pow(2, -(i + 1));
                 return mantissa;
             }
+            
+        public:
+
 
 
             static double IE754ToDouble(unsigned char* bytes)
