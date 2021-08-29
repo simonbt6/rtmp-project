@@ -133,6 +133,7 @@ namespace Utils
             {
                 unsigned char* data;
                 unsigned int length;
+                Netconnection::Object object;
             } Object;
 
             /**
@@ -207,49 +208,46 @@ namespace Utils
                 return arr;
             }
 
-            static AMF0::Number DecodeNumber(unsigned char* bytes)
+            template <typename IntegerType = int>
+            static void DecodeNumber(unsigned char* bytes, int size, int& index, IntegerType& value)
             {
-                return AMF0::Number{
-                    Utils::Math::IE754ToDouble(bytes),
-                    bytes
-                };
+                int length = 8;
+                unsigned char* data = Get(bytes, length, index + 2);
+                index += 1 + length;
+                value = Utils::Math::IE754ToDouble(data);
             }
 
-            static AMF0::String DecodeString(unsigned char* bytes, unsigned short length)
+            static void DecodeString(unsigned char* bytes, int size, int& index, string& value)
             {
-                char* strValue = new char[length];
-                for (int i = 0; i < length; i++)
-                    strValue[i] = bytes[i];
-                printf("\nString value: %s", strValue);
-                return AMF0::String{
-                    strValue,
-                    length,
-                    bytes
-                };
+                // Find string length
+                int length = 0;
+                BitOperations::bytesToInteger(
+                    length, 
+                    new unsigned char[2]{bytes[index + 1], bytes[index + 2]}, 
+                    false, 
+                    2);
+                unsigned char* data = Get(bytes, length, index + 3);
+                index += length + 2;
+                value = reinterpret_cast<char*>(data);
             }
 
-            static AMF0::Boolean DecodeBoolean(unsigned char* bytes)
+            static void DecodeBoolean(unsigned char* bytes, int size, int& index, bool& value)
             {
-                return AMF0::Boolean{
-                    (bool)((bytes[0] > 0) ? 1 : 0),
-                    bytes
-                };
+                
             }
 
-            static AMF0::Object DecodeObject(unsigned char* bytes)
+            static void DecodeObject(unsigned char* bytes, int size, int& index, Netconnection::Object& object)
             {
-                return AMF0::Object{
-                    bytes
-                };
+                unsigned char* data = Get(bytes, (size - index), index + 1);
+                int endIndex = FindIndex(data, (size - index + 1), AMF0::type_markers::object_end_marker);
+                int length = endIndex - index;
+                data = Get(data, (length + 1), index + 1);
+                index += endIndex + 1;
             }
 
-            static AMF0::LongString DecodeLongString(unsigned char* bytes, unsigned int length)
+            static void DecodeLongString(unsigned char* bytes, int& index, string& value)
             {
-                return AMF0::LongString{
-                    reinterpret_cast<char*>(bytes),
-                    length,
-                    bytes
-                };
+                
             }
 
             static CommandType FindCommandType(string commandName)
@@ -266,9 +264,470 @@ namespace Utils
                 return CommandType::Null;
             }
 
-
         public:
 
+            static Netconnection::Command* DecodeCommand(unsigned char* bytes, int size)
+            {
+                unsigned char* data;
+                /**
+                 * Find first item marker (string).
+                 * Parse item
+                 * Determine command type from command name.
+                 * Find second item (last item index + 1)
+                 * Parse
+                 * Repeat
+                 **/
+
+                /**
+                 * Find first item marker.
+                 **/
+                int commandNameIndex = FindIndex(bytes, size, AMF0::type_markers::string_marker);
+                int commandNameLength = 0;
+                BitOperations::bytesToInteger(
+                    commandNameLength, 
+                    new unsigned char[2]{bytes[commandNameIndex + 1], bytes[commandNameIndex + 2]}, 
+                    false, 
+                    2);
+                data = Get(bytes, commandNameLength, commandNameIndex + 3);
+                string commandNameString;
+                DecodeString(data, size, commandNameLength, commandNameString);
+                printf("\nCommand name: %s\n", commandNameString);
+
+                /**
+                 * Find command type.
+                 **/
+                CommandType commandType = CommandType::Null();
+                commandType = Netconnection::CommandLinker[commandNameString];
+
+                /**
+                 * Parse appropriate informations according to command type.
+                 **/
+                int lastIndex = commandNameIndex;
+                switch (commandType)
+                {
+                    case CommandType::Connect:
+                    {
+                        Netconnection::Connect command;
+                        /**
+                         * 1. Transaction ID.
+                         * 2. Command object: Object.
+                         * 3. Optional user arguments: Object.
+                         **/
+
+                        /**
+                         * Transaction ID.
+                         **/
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+
+                        /**
+                         * Command object.
+                         **/
+                        DecodeObject(bytes, size, lastIndex, command.CommandObject);
+
+                        /**
+                         * Checks if an optional user argument object is present.
+                         **/
+                        if (lastIndex >= size) return &command;
+                        
+                        /**
+                         * Optional user arguments.
+                         **/
+                        DecodeObject(bytes, size, lastIndex, command.OptionalUserArguments);
+
+                        return &command;
+                        break;
+                    }
+
+                    case CommandType::ConnectResponse:
+                    {
+                        Netconnection::ConnectResponse command;
+                        /**
+                         * 1. Transaction ID. Should be 1.
+                         * 2. Properties: Object.
+                         * 3. Information: Object.
+                         **/
+                        
+                        /**
+                         * Transaction ID.
+                         **/
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+
+                        /**
+                         * Properties.
+                         **/
+                        DecodeObject(bytes, size, lastIndex, command.Properties);
+
+                        /**
+                         * Information.
+                         **/
+                        DecodeObject(bytes, size, lastIndex, command.Information);
+
+                        return &command;
+                        break;
+                    }
+
+                    case CommandType::Call:
+                    {
+                        Netconnection::Call command;
+                        /**
+                         * 1. Procedure/Command Name: String
+                         * 2. Transaction ID: Number.
+                         * 3. Command object: Object.
+                         * 4. Optional arguments.
+                         **/
+
+                        /**
+                         * Procedure name.
+                         **/
+                        DecodeString(bytes, size, lastIndex, command.CommandName);
+
+                        /**
+                         * Transaction ID.
+                         **/
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+
+                        /**
+                         * Command object.
+                         **/
+                        DecodeObject(bytes, size, lastIndex, command.CommandObject);
+
+                        /**
+                         * Optional arguments.
+                         **/
+                        DecodeObject(bytes, size, lastIndex, command.OptionalArguments);
+                        
+                        return &command;
+                        break;
+                    }
+
+                    case CommandType::CallResponse:
+                    {
+                        Netconnection::CallResponse command;
+                        /**
+                         * 1. Transaction ID: Number. 
+                         *    - ID of the command, to which the response belongs.
+                         * 2. Command object: Object.
+                         * 3. Response: Object.
+                         **/
+
+                        /**
+                         * Transaction ID.
+                         **/
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+
+                        /**
+                         * Command object.
+                         **/
+                        DecodeObject(bytes, size, lastIndex, command.CommandObject);
+
+                        /**
+                         * Response.
+                         **/
+                        DecodeObject(bytes, size, lastIndex, command.Response);
+
+                        return &command;
+                        break;
+                    }    
+                    
+                    case CommandType::CreateStream:
+                    {
+                        Netconnection::CreateStream command;
+                        /**
+                         * 1. Transaction ID: Number.
+                         * 2. Command object: Object.
+                         **/
+
+                        /**
+                         * Transaction ID.
+                         **/
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+
+                        /**
+                         * Command object.
+                         **/
+                        DecodeObject(bytes, size, lastIndex, command.CommandObject);
+
+                        return &command;
+                        break;
+                    }
+
+                    case CommandType::CreateStreamResponse:
+                    {
+                        Netconnection::CreateStreamResponse command;
+                        /**
+                         * 1. Command Name: String. _result or _error.
+                         * 2. Transaction ID: Number. 
+                         *    - ID of the command , to which the response belongs.
+                         * 3. Stream ID: Number.
+                         **/
+                        
+                        /**
+                         * Command name.
+                         **/
+                        DecodeString(bytes, size, lastIndex, command.CommandName);
+
+                        /**
+                         * Transaction ID.
+                         **/
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+
+                        /**
+                         * Stream ID.
+                         **/
+                        DecodeNumber<unsigned int>(bytes, size, lastIndex, command.StreamID);
+
+                        return &command;
+                        break;
+                    }
+
+                    case CommandType::OnStatus:
+                    {
+                        Netconnection::OnStatus command;
+                        /**
+                         * 1. Transaction ID: Number. Should be 0.
+                         * 2. Command object: Object. Should be NULL.
+                         * 3. Info object: Object.
+                         **/
+
+                        /**
+                         * Transaction ID.
+                         **/
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+
+                        /**
+                         * Information.
+                         **/
+                        DecodeObject(bytes, size, lastIndex, command.Information);
+
+                        return &command;
+                        break;
+                    }
+
+                    case CommandType::Play:
+                    {
+                        Netconnection::Play command;
+                        /**
+                         * 1. Transaction ID: Number. Should be 0.
+                         * 2. Command object: Object. Should be NULL.
+                         * 3. Stream name: String. 
+                         * 4. Start: Number.
+                         * 5. Duration: Number.
+                         * 6. Reset: Bool.
+                         **/
+
+                        /**
+                         * Transaction ID.
+                         **/
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+
+                        /**
+                         * Stream name.
+                         **/
+                        DecodeString(bytes, size, lastIndex, command.StreamName);
+
+                        /**
+                         * Start.
+                         **/
+                        DecodeNumber<int>(bytes, size, lastIndex, command.Start);
+
+                        /**
+                         * Duration.
+                         **/
+                        DecodeNumber<int>(bytes, size, lastIndex, command.duration);
+
+                        /**
+                         * Reset.
+                         **/
+                        DecodeBoolean(bytes, size, lastIndex, command.Reset);
+
+                        return &command;
+                        break;
+                    }
+
+                    case CommandType::Play2:
+                    {
+                        Netconnection::Play2 command;
+                        /**
+                         * 1. Transaction ID: Number. Should be 0.
+                         * 2. Command object: Object. Should be NULL.
+                         * 3. Parameters: Object.
+                         **/
+
+                        /**
+                         * Transaction ID.
+                         **/
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+
+                        /**
+                         * Parameters.
+                         **/
+                        DecodeObject(bytes, size, lastIndex, command.Parameters);
+
+                        return &command;
+                        break;
+                    }
+
+                    case CommandType::DeleteStream:
+                    {
+                        Netconnection::DeleteStream command;
+                        /**
+                         * 1. Transaction ID: Number. Should be 0.
+                         * 2. Command object: Object. Should be NULL.
+                         * 3. Stream ID: Number.
+                         **/
+
+                        /**
+                         * Transaction ID.
+                         **/
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+
+                        /**
+                         * Stream ID.
+                         **/
+                        DecodeNumber(bytes, size, lastIndex, command.StreamID);
+
+                        return &command;
+                        break;
+                    }
+                    case CommandType::ReceiveAudio:
+                    {
+                        Netconnection::ReceiveAudio command;
+                        /**
+                         * 1. Transaction ID: Number. Should be 0.
+                         * 2. Command object: Object. Should be NULL.
+                         * 3. Bool flag: Bool.
+                         **/
+
+                        /**
+                         * Transaction ID.
+                         **/
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+
+                        /**
+                         * Bool flag.
+                         **/
+                        DecodeBoolean(bytes, size, lastIndex, command.BoolFlag);
+
+                        return &command;
+                        break;
+                    }
+
+                    case CommandType::ReceiveVideo:
+                    {
+                        Netconnection::ReceiveVideo command;
+                        /**
+                         * 1. Transaction ID: Number. Should be 0.
+                         * 2. Command object: Object. Should be NULL.
+                         * 3. Bool flag: Bool.
+                         **/
+
+                        /**
+                         * Transaction ID.
+                         **/
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+
+                        /**
+                         * Bool flag.
+                         **/
+                        DecodeBoolean(bytes, size, lastIndex, command.BoolFlag);
+
+                        return &command;
+                        break;
+                    }
+
+                    case CommandType::Publish:
+                    {
+                        Netconnection::Publish command;
+                        /**
+                         * 1. Transaction ID: Number. Should be 0.
+                         * 2. Command object: Object. Should be NULL.
+                         * 3. Publishing name: String.
+                         * 4. Publishing type: String.
+                         **/
+
+                        /**
+                         * Transaction ID.
+                         **/
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+
+                        /**
+                         * Publishing name.
+                         **/
+                        DecodeString(bytes, size, lastIndex, command.PublishingName);
+
+                        /**
+                         * Publishing type.
+                         **/
+                        DecodeString(bytes, size, lastIndex, command.PublishingType);
+
+                        return &command;
+                        break;
+                    }
+
+                    case CommandType::Seek:
+                    {
+                        Netconnection::Seek command;
+                        /**
+                         * 1. Transaction ID: Number. Should be 0.
+                         * 2. Command object: Object. Should be NULL.
+                         * 3. Milliseconds: Number.
+                         **/
+
+                        /**
+                         * Transaction ID.
+                         **/
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+
+                        /**
+                         * Milliseconds.
+                         **/
+                        DecodeNumber<int>(bytes, size, lastIndex, command.milliseconds);
+                        
+                        return &command;
+                        break;
+                    }
+
+                    case CommandType::Pause:
+                    {
+                        Netconnection::Pause command;
+                        /**
+                         * 1. Transaction ID: Number. Should be 0.
+                         * 2. Command object: Object. Should be NULL.
+                         * 3. Pause: Bool.
+                         * 4. Milliseconds: Number.
+                         **/
+
+                        /**
+                         * Transaction ID.
+                         **/
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+
+                        /**
+                         * Pause.
+                         **/
+                        DecodeBoolean(bytes, size, lastIndex, command.Pause);
+
+                        /**
+                         * Milliseconds.
+                         **/
+                        DecodeNumber<int>(bytes, size, lastIndex, command.Milliseconds);
+                        
+                        return &command;
+                        break;
+                    }
+
+                    case CommandType::Null:
+                        printf("Error, null command type.");
+                        break;
+                };
+
+
+            }
+            
+
+            /**
+             * TODO: Convert this to parse Object (map<string, Property*>).
+             **/
             static AMF0::Message Decode(unsigned char* bytes, int size)
             {
                 AMF0::type_markers lastMarker = (AMF0::type_markers)-1;
@@ -344,44 +803,20 @@ namespace Utils
                         switch (lastMarker)
                         {
                             case AMF0::type_markers::number_marker:
-                                length = 8;
-                                data = Get(bytes, length, lastIndex + 2);
-                                number =  DecodeNumber(data);
-                                lastIndex += 1 + length;
-                                numbers.push_back(number);
-                                cout << "\nNumber value: " << number.value;
+                                
                                 break;
 
                             case AMF0::type_markers::boolean_marker:
                                 printf("\nBoolean marker found. %i", lastIndex);
                                 lastIndex = size;
-                                //booleans.push_back(boolean);
                                 break;
 
                             case AMF0::type_markers::string_marker:
-                                // Find string length
-                                BitOperations::bytesToInteger(
-                                    length, 
-                                    new unsigned char[2]{bytes[lastIndex + 1], bytes[lastIndex + 2]}, 
-                                    false, 
-                                    2);
-                                data = Get(bytes, length, lastIndex + 3);
-                                str = DecodeString(data, length);
-                                if (firstElement)
-                                    commandName = str.value;
-                                lastIndex += length + 2;
-                                strings.push_back(str);
+                                
                                 break;
 
                             case AMF0::type_markers::object_marker:
-                                data = Get(bytes, (size - lastIndex), lastIndex + 1);
-                                endIndex = FindIndex(data, (size - lastIndex + 1), AMF0::type_markers::object_end_marker);
-                                data = Get(data, (endIndex - lastIndex + 1), lastIndex + 1);
-                                length = endIndex - lastIndex;
-                                lastIndex += endIndex + 1;
-                                object.data = data;
-                                object.length = length;
-                                objects.push_back(object);
+                                
                                 break;
 
                             case AMF0::type_markers::reference_marker:
@@ -402,31 +837,8 @@ namespace Utils
                                 break;
                         };
                         itemCount++;
-
-                        if (firstElement)
-                        {
-                            // Find message type
-                            printf("\nCommand name: %s", commandName);
-                            CommandType commandType = FindCommandType(commandName);
-                            if (commandType == CommandType::Null)
-                                printf("\nError, could not find a command type matching command name: %s", commandName);
-                            printf("\nFound matching command type: %i", commandType);
-                            firstElement = false;
-                        }
                     }
-
                 }
-                // Assignations
-                message.numbers = numbers.data();
-                message.numberCount = numbers.size();
-                message.booleans = booleans.data();
-                message.booleanCount = booleans.size();
-                message.strings = strings.data();
-                message.stringCount = strings.size();
-                message.objects = objects.data();
-                message.booleanCount = objects.size();
-                message.references = references.data();
-                message.referenceCount = references.size();
                 return message;
             }
     };
