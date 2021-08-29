@@ -728,118 +728,73 @@ namespace Utils
             /**
              * TODO: Convert this to parse Object (map<string, Property*>).
              **/
-            static AMF0::Message Decode(unsigned char* bytes, int size)
+            static Netconnection::Object Decode(unsigned char* bytes, int size)
             {
                 AMF0::type_markers lastMarker = (AMF0::type_markers)-1;
                 int lastIndex = 0;
-                bool doneWithItem = true;
                 bool firstElement = false;
 
-                int itemCount = 0;
-
-                AMF0::Message message;
-                        
-                vector<AMF0::Number> numbers;
-                vector<AMF0::Boolean> booleans;
-                vector<AMF0::String> strings;
-                vector<AMF0::Object> objects;
-                vector<AMF0::Reference> references;
-
-                Netconnection::Command* command;
-                CommandType commandType = CommandType::Null;
-
-
-
+                Netconnection::Object object;
                 
 
                 while (lastIndex < size -1)
                 {
-                    // Looking for beginning marker
-                    if (lastMarker == -1)
+                    
+                    int length;
+                    unsigned char* data;
+
+                    
+                    int nextItemMarkerIndex = lastIndex + 1;
+                    if (bytes[nextItemMarkerIndex] < 18)
                     {
-                        if (bytes[lastIndex] == AMF0::type_markers::string_marker)
-                        {
-                            // Found begin marker / string for command name.
-                            lastMarker = AMF0::type_markers::string_marker;
-                            firstElement = true;
-                        }
-                        else
-                        {
-                            // Error. Message should start with a command name (ie 0x02).
-                            #if __DEBUG
-                                printf("\nSkipping index %i, string marker not found.", lastIndex);
-                            #endif
-                            lastIndex++;
-                        }
+                        lastMarker = (AMF0::type_markers)bytes[nextItemMarkerIndex];
                     }
                     else
                     {
-                        int length;
-                        int endIndex = -1;
-                        unsigned char* data;
-
-                        string commandName;
-
-
-                        // Type initialization
-                        AMF0::Number number;
-                        AMF0::Boolean boolean;
-                        AMF0::String str;
-                        AMF0::Object object;
-                        AMF0::Reference reference;
-                        
-                        int nextItemMarkerIndex = lastIndex + 1;
-                        if ((itemCount > 0) && bytes[nextItemMarkerIndex] < 18)
-                        {
-                            lastMarker = (AMF0::type_markers)bytes[nextItemMarkerIndex];
-                        }
-                        else
-                        {
-                            #if __DEBUG
-                                printf("\nError, next byte is not a marker. %X", bytes[nextItemMarkerIndex]);
-                            #endif
-                        }
-
-                        switch (lastMarker)
-                        {
-                            case AMF0::type_markers::number_marker:
-                                
-                                break;
-
-                            case AMF0::type_markers::boolean_marker:
-                                printf("\nBoolean marker found. %i", lastIndex);
-                                lastIndex = size;
-                                break;
-
-                            case AMF0::type_markers::string_marker:
-                                
-                                break;
-
-                            case AMF0::type_markers::object_marker:
-                                
-                                break;
-
-                            case AMF0::type_markers::reference_marker:
-                                printf("\nReference marker found. %i", lastIndex);
-                                lastIndex = size;
-                                // references.push_back(reference);
-                                break;
-                            
-                            case AMF0::null_marker:
-                                // Ignores  null markers for now.
-                                lastIndex++;
-                                break;
-
-                            default:
-                                printf("\nUnsupported AMF0 type. Type %i", lastMarker);
-                                itemCount--;
-                                lastIndex = size;
-                                break;
-                        };
-                        itemCount++;
+                        #if __DEBUG
+                            printf("\nError, next byte is not a marker. %X", bytes[nextItemMarkerIndex]);
+                        #endif
                     }
+
+                    switch (lastMarker)
+                    {
+                        case AMF0::type_markers::number_marker:       
+                        {
+                                break;
+                        }
+
+                        case AMF0::type_markers::boolean_marker:
+                        {
+                                break;
+                        }
+
+                        case AMF0::type_markers::string_marker:
+                        {
+                                break;
+                        }
+
+                        case AMF0::type_markers::object_marker:
+                        {
+                                break;
+                        }
+
+                        case AMF0::type_markers::reference_marker:
+                        {
+                                break;
+                        }
+                        
+                        case AMF0::null_marker:
+                        {
+                                break;
+                        }
+
+                        default:
+                            printf("\nUnsupported AMF0 type. Type %i", lastMarker);
+                            lastIndex = size; // Kills the process.
+                            break;
+                    };
                 }
-                return message;
+                return object;
             }
     };
 
