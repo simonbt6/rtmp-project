@@ -25,10 +25,9 @@ namespace Utils
                 if (i % 16 == 0) printf("\n");
                 else if (i % 8 == 0) printf("   ");
 
-                printf("%i  ", arr[i]);
+                printf("%X  ", arr[i]);
 
-                if (arr[i] < 10) printf("  ");
-                else if (arr[i] < 100) printf(" ");
+                if (arr[i] < 0x10) printf(" ");
             }
         }
     };
