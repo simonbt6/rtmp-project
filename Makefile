@@ -10,5 +10,5 @@ compile_server_windows:
 
 compile_test_mac:
 	echo "Compiling RTMP lib test for MacOS..."
-	c++ test/test.cpp src/core/RTMPParser.cpp -o 'bin/test.out'
-	rm test.obj RTMPParser.obj
+	c++ test/test.cpp -std=c++17 src/core/RTMPParser.cpp -o 'bin/test.out'
+
