@@ -19,10 +19,6 @@
 
 using namespace std;
 
-/**
- * Type defintions
- **/
-
 #define __DEBUG true
 
 
@@ -219,14 +215,19 @@ namespace Utils
 
             static void DecodeString(unsigned char* bytes, int size, int& index, string& value)
             {
-                // Find string length
+                if (size == 0) printf("\nError, data size is 0.");
                 int length = 0;
+                printf("\nIndex: %i", index);
+                printf("\nString length bytes: %X, %X", bytes[index + 1], bytes[index + 2]);
+                
                 BitOperations::bytesToInteger(
                     length, 
                     new unsigned char[2]{bytes[index + 1], bytes[index + 2]}, 
                     false, 
                     2);
+             
                 unsigned char* data = Get(bytes, length, index + 3);
+                printf("\nData length: %i", length);
                 index += length + 2;
                 value = reinterpret_cast<char*>(data);
             }
@@ -247,7 +248,7 @@ namespace Utils
 
             static void DecodeLongString(unsigned char* bytes, int& index, string& value)
             {
-                
+                // TODO: Implement long string (> 65535 bytes) decoding.
             }
 
             static CommandType FindCommandType(string commandName)
@@ -264,8 +265,100 @@ namespace Utils
                 return CommandType::Null;
             }
 
-        public:
+            static Property* DecodeField(unsigned char* bytes, int size, int& index, AMF0::type_markers lastMarker)
+            {
+                unsigned char* data;
+                switch (lastMarker)
+                    {
+                        case AMF0::type_markers::number_marker:       
+                        {
+                            Field<int> field;
+                            
+                            DecodeNumber(bytes, size, index, field.m_Value);
 
+                            return &field;
+                            break;
+                        }
+
+                        case AMF0::type_markers::boolean_marker:
+                        {
+                            Field<bool> field;
+                            DecodeBoolean(bytes, size, index, field.m_Value);
+
+                            return &field;
+                            break;
+                        }
+
+                        case AMF0::type_markers::string_marker:
+                        {
+                            Field<string> field;
+                            DecodeString(bytes, size, index, field.m_Value);
+
+                            return &field;
+                            break;
+                        }
+
+                        case AMF0::type_markers::object_marker:
+                        {
+                            Field<Netconnection::Object> field;
+                            DecodeObject(bytes, size, index, field.m_Value);
+
+                            return &field;
+                            break;
+                        }
+
+                        case AMF0::type_markers::reference_marker:
+                        {
+                            printf("\nError, unsupported type marker. Reference marker.");
+                            break;
+                        }
+                        
+                        case AMF0::null_marker:
+                        {
+                            printf("\nError, unsupported type marker. Null marker.");
+                            index++;
+                            return nullptr;
+                            break;
+                        }
+
+                        default:
+                            printf("\nUnsupported AMF0 type. Type %i", lastMarker);
+                            index = size; // Kills the process.
+                            return nullptr;
+                            break;
+                    };
+                    return nullptr;
+            }
+
+
+            static Netconnection::Object DecodeObjectProperties(unsigned char* bytes, int size)
+            {
+                AMF0::type_markers lastMarker = (AMF0::type_markers)-1;
+                int lastIndex = 0;
+                bool firstElement = false;
+
+                Netconnection::Object object;                
+
+                while (lastIndex < size -1)
+                {
+                    
+                    int length;
+                    unsigned char* data;
+
+                    string key;
+                    DecodeString(bytes, size, lastIndex, key);
+                    lastMarker = (AMF0::type_markers)bytes[lastIndex + 1];
+                    Property* property = DecodeField(bytes, size, lastIndex, lastMarker);
+                    PropertyType propertyType = Netconnection::propertyTypeLinker[key];
+
+                    if (property != nullptr)
+                        object.insert(pair<PropertyType, Property*> (propertyType, property));
+
+                }
+                return object;
+            }
+
+        public:
             static Netconnection::Command* DecodeCommand(unsigned char* bytes, int size)
             {
                 unsigned char* data;
@@ -278,36 +371,31 @@ namespace Utils
                  * Repeat
                  **/
 
+                int lastIndex = 0;
                 /**
                  * Find first item marker.
                  **/
-                int commandNameIndex = FindIndex(bytes, size, AMF0::type_markers::string_marker);
-                int commandNameLength = 0;
-                BitOperations::bytesToInteger(
-                    commandNameLength, 
-                    new unsigned char[2]{bytes[commandNameIndex + 1], bytes[commandNameIndex + 2]}, 
-                    false, 
-                    2);
-                data = Get(bytes, commandNameLength, commandNameIndex + 3);
+                lastIndex = FindIndex(bytes, size, AMF0::type_markers::string_marker);
                 string commandNameString;
-                DecodeString(data, size, commandNameLength, commandNameString);
-                printf("\nCommand name: %s\n", commandNameString);
+                DecodeString(bytes, size, lastIndex, commandNameString);
+                printf("\nCommand name: %s", commandNameString.c_str());
 
                 /**
                  * Find command type.
                  **/
-                CommandType commandType = CommandType::Null();
+                CommandType commandType = CommandType::Null;
                 commandType = Netconnection::CommandLinker[commandNameString];
+                printf("\nCommand type: %i\n", commandType);
 
                 /**
                  * Parse appropriate informations according to command type.
                  **/
-                int lastIndex = commandNameIndex;
+                printf("\nCommand body: ");
                 switch (commandType)
                 {
                     case CommandType::Connect:
                     {
-                        Netconnection::Connect command;
+                        Netconnection::Connect* cmd = new Netconnection::Connect();
                         /**
                          * 1. Transaction ID.
                          * 2. Command object: Object.
@@ -317,30 +405,35 @@ namespace Utils
                         /**
                          * Transaction ID.
                          **/
-                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, cmd->TransactionID);
+                        printf("\nTransaction ID: %i", cmd->TransactionID);
 
                         /**
                          * Command object.
                          **/
-                        DecodeObject(bytes, size, lastIndex, command.CommandObject);
+                        //DecodeObject(bytes, size, lastIndex, command.CommandObject);
+                        
 
                         /**
                          * Checks if an optional user argument object is present.
                          **/
-                        if (lastIndex >= size) return &command;
+                        if (lastIndex >= size) {
+                            return cmd;
+                            break;
+                        }
                         
                         /**
                          * Optional user arguments.
                          **/
-                        DecodeObject(bytes, size, lastIndex, command.OptionalUserArguments);
-
-                        return &command;
+                        //DecodeObject(bytes, size, lastIndex, command.OptionalUserArguments);
+                        return cmd;  
+                        printf("­\nBreak.");                      
                         break;
                     }
 
                     case CommandType::ConnectResponse:
                     {
-                        Netconnection::ConnectResponse command;
+                        Netconnection::ConnectResponse* cmd = new Netconnection::ConnectResponse();
                         /**
                          * 1. Transaction ID. Should be 1.
                          * 2. Properties: Object.
@@ -350,25 +443,25 @@ namespace Utils
                         /**
                          * Transaction ID.
                          **/
-                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, cmd->TransactionID);
 
                         /**
                          * Properties.
                          **/
-                        DecodeObject(bytes, size, lastIndex, command.Properties);
+                        DecodeObject(bytes, size, lastIndex, cmd->Properties);
 
                         /**
                          * Information.
                          **/
-                        DecodeObject(bytes, size, lastIndex, command.Information);
+                        DecodeObject(bytes, size, lastIndex, cmd->Information);
 
-                        return &command;
+                        return cmd;
                         break;
                     }
 
                     case CommandType::Call:
                     {
-                        Netconnection::Call command;
+                        Netconnection::Call* cmd = new Netconnection::Call();
                         /**
                          * 1. Procedure/Command Name: String
                          * 2. Transaction ID: Number.
@@ -379,30 +472,30 @@ namespace Utils
                         /**
                          * Procedure name.
                          **/
-                        DecodeString(bytes, size, lastIndex, command.CommandName);
+                        DecodeString(bytes, size, lastIndex, cmd->CommandName);
 
                         /**
                          * Transaction ID.
                          **/
-                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, cmd->TransactionID);
 
                         /**
                          * Command object.
                          **/
-                        DecodeObject(bytes, size, lastIndex, command.CommandObject);
+                        DecodeObject(bytes, size, lastIndex, cmd->CommandObject);
 
                         /**
                          * Optional arguments.
                          **/
-                        DecodeObject(bytes, size, lastIndex, command.OptionalArguments);
+                        DecodeObject(bytes, size, lastIndex, cmd->OptionalArguments);
                         
-                        return &command;
+                        return cmd;
                         break;
                     }
 
                     case CommandType::CallResponse:
                     {
-                        Netconnection::CallResponse command;
+                        Netconnection::CallResponse* cmd = new Netconnection::CallResponse();
                         /**
                          * 1. Transaction ID: Number. 
                          *    - ID of the command, to which the response belongs.
@@ -413,25 +506,25 @@ namespace Utils
                         /**
                          * Transaction ID.
                          **/
-                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, cmd->TransactionID);
 
                         /**
                          * Command object.
                          **/
-                        DecodeObject(bytes, size, lastIndex, command.CommandObject);
+                        DecodeObject(bytes, size, lastIndex, cmd->CommandObject);
 
                         /**
                          * Response.
                          **/
-                        DecodeObject(bytes, size, lastIndex, command.Response);
+                        DecodeObject(bytes, size, lastIndex, cmd->Response);
 
-                        return &command;
+                        return cmd;
                         break;
                     }    
                     
                     case CommandType::CreateStream:
                     {
-                        Netconnection::CreateStream command;
+                        Netconnection::CreateStream* cmd = new Netconnection::CreateStream();
                         /**
                          * 1. Transaction ID: Number.
                          * 2. Command object: Object.
@@ -440,20 +533,20 @@ namespace Utils
                         /**
                          * Transaction ID.
                          **/
-                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, cmd->TransactionID);
 
                         /**
                          * Command object.
                          **/
-                        DecodeObject(bytes, size, lastIndex, command.CommandObject);
+                        DecodeObject(bytes, size, lastIndex, cmd->CommandObject);
 
-                        return &command;
+                        return cmd;
                         break;
                     }
 
                     case CommandType::CreateStreamResponse:
                     {
-                        Netconnection::CreateStreamResponse command;
+                        Netconnection::CreateStreamResponse* cmd = new Netconnection::CreateStreamResponse();
                         /**
                          * 1. Command Name: String. _result or _error.
                          * 2. Transaction ID: Number. 
@@ -464,25 +557,25 @@ namespace Utils
                         /**
                          * Command name.
                          **/
-                        DecodeString(bytes, size, lastIndex, command.CommandName);
+                        DecodeString(bytes, size, lastIndex, cmd->CommandName);
 
                         /**
                          * Transaction ID.
                          **/
-                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, cmd->TransactionID);
 
                         /**
                          * Stream ID.
                          **/
-                        DecodeNumber<unsigned int>(bytes, size, lastIndex, command.StreamID);
+                        DecodeNumber<unsigned int>(bytes, size, lastIndex, cmd->StreamID);
 
-                        return &command;
+                        return cmd;
                         break;
                     }
 
                     case CommandType::OnStatus:
                     {
-                        Netconnection::OnStatus command;
+                        Netconnection::OnStatus* cmd = new Netconnection::OnStatus();
                         /**
                          * 1. Transaction ID: Number. Should be 0.
                          * 2. Command object: Object. Should be NULL.
@@ -492,20 +585,20 @@ namespace Utils
                         /**
                          * Transaction ID.
                          **/
-                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, cmd->TransactionID);
 
                         /**
                          * Information.
                          **/
-                        DecodeObject(bytes, size, lastIndex, command.Information);
+                        DecodeObject(bytes, size, lastIndex, cmd->Information);
 
-                        return &command;
+                        return cmd;
                         break;
                     }
 
                     case CommandType::Play:
                     {
-                        Netconnection::Play command;
+                        Netconnection::Play* cmd = new Netconnection::Play();
                         /**
                          * 1. Transaction ID: Number. Should be 0.
                          * 2. Command object: Object. Should be NULL.
@@ -518,35 +611,35 @@ namespace Utils
                         /**
                          * Transaction ID.
                          **/
-                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, cmd->TransactionID);
 
                         /**
                          * Stream name.
                          **/
-                        DecodeString(bytes, size, lastIndex, command.StreamName);
+                        DecodeString(bytes, size, lastIndex, cmd->StreamName);
 
                         /**
                          * Start.
                          **/
-                        DecodeNumber<int>(bytes, size, lastIndex, command.Start);
+                        DecodeNumber<int>(bytes, size, lastIndex, cmd->Start);
 
                         /**
                          * Duration.
                          **/
-                        DecodeNumber<int>(bytes, size, lastIndex, command.duration);
+                        DecodeNumber<int>(bytes, size, lastIndex, cmd->duration);
 
                         /**
                          * Reset.
                          **/
-                        DecodeBoolean(bytes, size, lastIndex, command.Reset);
+                        DecodeBoolean(bytes, size, lastIndex, cmd->Reset);
 
-                        return &command;
+                        return cmd;
                         break;
                     }
 
                     case CommandType::Play2:
                     {
-                        Netconnection::Play2 command;
+                        Netconnection::Play2* cmd = new Netconnection::Play2();
                         /**
                          * 1. Transaction ID: Number. Should be 0.
                          * 2. Command object: Object. Should be NULL.
@@ -556,20 +649,20 @@ namespace Utils
                         /**
                          * Transaction ID.
                          **/
-                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, cmd->TransactionID);
 
                         /**
                          * Parameters.
                          **/
-                        DecodeObject(bytes, size, lastIndex, command.Parameters);
+                        DecodeObject(bytes, size, lastIndex, cmd->Parameters);
 
-                        return &command;
+                        return cmd;
                         break;
                     }
 
                     case CommandType::DeleteStream:
                     {
-                        Netconnection::DeleteStream command;
+                        Netconnection::DeleteStream* cmd = new Netconnection::DeleteStream();
                         /**
                          * 1. Transaction ID: Number. Should be 0.
                          * 2. Command object: Object. Should be NULL.
@@ -579,19 +672,19 @@ namespace Utils
                         /**
                          * Transaction ID.
                          **/
-                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, cmd->TransactionID);
 
                         /**
                          * Stream ID.
                          **/
-                        DecodeNumber(bytes, size, lastIndex, command.StreamID);
+                        DecodeNumber(bytes, size, lastIndex, cmd->StreamID);
 
-                        return &command;
+                        return cmd;
                         break;
                     }
                     case CommandType::ReceiveAudio:
                     {
-                        Netconnection::ReceiveAudio command;
+                        Netconnection::ReceiveAudio* cmd = new Netconnection::ReceiveAudio();
                         /**
                          * 1. Transaction ID: Number. Should be 0.
                          * 2. Command object: Object. Should be NULL.
@@ -601,20 +694,20 @@ namespace Utils
                         /**
                          * Transaction ID.
                          **/
-                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, cmd->TransactionID);
 
                         /**
                          * Bool flag.
                          **/
-                        DecodeBoolean(bytes, size, lastIndex, command.BoolFlag);
+                        DecodeBoolean(bytes, size, lastIndex, cmd->BoolFlag);
 
-                        return &command;
+                        return cmd;
                         break;
                     }
 
                     case CommandType::ReceiveVideo:
                     {
-                        Netconnection::ReceiveVideo command;
+                        Netconnection::ReceiveVideo* cmd = new Netconnection::ReceiveVideo();
                         /**
                          * 1. Transaction ID: Number. Should be 0.
                          * 2. Command object: Object. Should be NULL.
@@ -624,20 +717,20 @@ namespace Utils
                         /**
                          * Transaction ID.
                          **/
-                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, cmd->TransactionID);
 
                         /**
                          * Bool flag.
                          **/
-                        DecodeBoolean(bytes, size, lastIndex, command.BoolFlag);
+                        DecodeBoolean(bytes, size, lastIndex, cmd->BoolFlag);
 
-                        return &command;
+                        return cmd;
                         break;
                     }
 
                     case CommandType::Publish:
                     {
-                        Netconnection::Publish command;
+                        Netconnection::Publish* cmd = new Netconnection::Publish();
                         /**
                          * 1. Transaction ID: Number. Should be 0.
                          * 2. Command object: Object. Should be NULL.
@@ -648,25 +741,25 @@ namespace Utils
                         /**
                          * Transaction ID.
                          **/
-                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, cmd->TransactionID);
 
                         /**
                          * Publishing name.
                          **/
-                        DecodeString(bytes, size, lastIndex, command.PublishingName);
+                        DecodeString(bytes, size, lastIndex, cmd->PublishingName);
 
                         /**
                          * Publishing type.
                          **/
-                        DecodeString(bytes, size, lastIndex, command.PublishingType);
+                        DecodeString(bytes, size, lastIndex, cmd->PublishingType);
 
-                        return &command;
+                        return cmd;
                         break;
                     }
 
                     case CommandType::Seek:
                     {
-                        Netconnection::Seek command;
+                        Netconnection::Seek* cmd = new Netconnection::Seek();
                         /**
                          * 1. Transaction ID: Number. Should be 0.
                          * 2. Command object: Object. Should be NULL.
@@ -676,20 +769,20 @@ namespace Utils
                         /**
                          * Transaction ID.
                          **/
-                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, cmd->TransactionID);
 
                         /**
                          * Milliseconds.
                          **/
-                        DecodeNumber<int>(bytes, size, lastIndex, command.milliseconds);
+                        DecodeNumber<int>(bytes, size, lastIndex, cmd->milliseconds);
                         
-                        return &command;
+                        return cmd;
                         break;
                     }
 
                     case CommandType::Pause:
                     {
-                        Netconnection::Pause command;
+                        Netconnection::Pause* cmd = new Netconnection::Pause();
                         /**
                          * 1. Transaction ID: Number. Should be 0.
                          * 2. Command object: Object. Should be NULL.
@@ -700,19 +793,19 @@ namespace Utils
                         /**
                          * Transaction ID.
                          **/
-                        DecodeNumber<unsigned short>(bytes, size, lastIndex, command.TransactionID);
+                        DecodeNumber<unsigned short>(bytes, size, lastIndex, cmd->TransactionID);
 
                         /**
                          * Pause.
                          **/
-                        DecodeBoolean(bytes, size, lastIndex, command.Pause);
+                        DecodeBoolean(bytes, size, lastIndex, cmd->pause);
 
                         /**
                          * Milliseconds.
                          **/
-                        DecodeNumber<int>(bytes, size, lastIndex, command.Milliseconds);
+                        DecodeNumber<int>(bytes, size, lastIndex, cmd->Milliseconds);
                         
-                        return &command;
+                        return cmd;
                         break;
                     }
 
@@ -720,81 +813,7 @@ namespace Utils
                         printf("Error, null command type.");
                         break;
                 };
-
-
-            }
-            
-
-            /**
-             * TODO: Convert this to parse Object (map<string, Property*>).
-             **/
-            static Netconnection::Object Decode(unsigned char* bytes, int size)
-            {
-                AMF0::type_markers lastMarker = (AMF0::type_markers)-1;
-                int lastIndex = 0;
-                bool firstElement = false;
-
-                Netconnection::Object object;
-                
-
-                while (lastIndex < size -1)
-                {
-                    
-                    int length;
-                    unsigned char* data;
-
-                    
-                    int nextItemMarkerIndex = lastIndex + 1;
-                    if (bytes[nextItemMarkerIndex] < 18)
-                    {
-                        lastMarker = (AMF0::type_markers)bytes[nextItemMarkerIndex];
-                    }
-                    else
-                    {
-                        #if __DEBUG
-                            printf("\nError, next byte is not a marker. %X", bytes[nextItemMarkerIndex]);
-                        #endif
-                    }
-
-                    switch (lastMarker)
-                    {
-                        case AMF0::type_markers::number_marker:       
-                        {
-                                break;
-                        }
-
-                        case AMF0::type_markers::boolean_marker:
-                        {
-                                break;
-                        }
-
-                        case AMF0::type_markers::string_marker:
-                        {
-                                break;
-                        }
-
-                        case AMF0::type_markers::object_marker:
-                        {
-                                break;
-                        }
-
-                        case AMF0::type_markers::reference_marker:
-                        {
-                                break;
-                        }
-                        
-                        case AMF0::null_marker:
-                        {
-                                break;
-                        }
-
-                        default:
-                            printf("\nUnsupported AMF0 type. Type %i", lastMarker);
-                            lastIndex = size; // Kills the process.
-                            break;
-                    };
-                }
-                return object;
+                return nullptr;
             }
     };
 

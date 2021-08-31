@@ -228,7 +228,6 @@ namespace RTMP {
             bData[i] = (unsigned)data.at(i + chunk.displacement);
         
         chunk.data = bData;
-        
     }
 
     void Parser::ParseChunk(vector<int>& data, Chunk& chunk)
@@ -289,12 +288,14 @@ namespace RTMP {
                     printf("\n\nAggregate message.");
                     break;
                 case Message::Type::AMF0CommandMessage:
+                {
                     printf("\n\nAMF0 Command message.");
-                    message = Utils::AMF0Decoder::Decode(
+                    Netconnection::Command* command = Utils::AMF0Decoder::DecodeCommand(
                         chunk.data, 
                         chunk.messageHeader.message_length);
                     printf("\n");
                     break;
+                }
                 case Message::Type::AMF3CommandMessage:
                     printf("\n\nAMF3 Command message.");
                     break;
