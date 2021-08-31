@@ -28,9 +28,10 @@ enum PropertyType
 
 struct Property 
 {
-    const PropertyType type;
-    ~Property() = default;
+    PropertyType type;
+    virtual ~Property() = default;
 };
+
 template<typename T>
 struct Field: Property
 {
@@ -50,6 +51,7 @@ enum CommandType
     Play,
     Play2,
     DeleteStream,
+    ReceiveAudio,
     ReceiveVideo,
     Publish,
     Seek,
@@ -60,20 +62,18 @@ class Netconnection
 {
     public:
         typedef map<PropertyType, Property*> Object;
-        const string propertyName[10] = {
-            "app",
-            "flashver",
-            "swtUrl",
-            "tcUrl",
-            "fpad",
-            "audioCodecs",
-            "videoCodecs",
-            "videoFunction",
-            "pageUrl",
-            "objectEncoding"
+        static inline map<string, PropertyType> propertyTypeLinker = {
+            {"app", PropertyType::app},
+            {"flashver", PropertyType::flashver},
+            {"swtUrl", PropertyType::swtUrl},
+            {"tcUrl", PropertyType::tcUrl},
+            {"fpad", PropertyType::fpad},
+            {"audioCodecs", PropertyType::audioCodecs},
+            {"videoCodecs", PropertyType::videoCodecs},
+            {"videoFunction", PropertyType::videoFunction},
+            {"pageUrl", PropertyType::pageUrl},
+            {"objectEncoding", PropertyType::objectEncoding},
         };
-
- 
         
         static inline map<string, CommandType> CommandLinker = {
             {"connect", CommandType::Connect},
@@ -86,6 +86,7 @@ class Netconnection
             {"play", CommandType::Play},
             {"play2", CommandType::Play2},
             {"deleteStream", CommandType::DeleteStream},
+            {"receiveAudio", CommandType::ReceiveAudio},
             {"receiveVideo", CommandType::ReceiveVideo},
             {"publish", CommandType::Publish},
             {"seek", CommandType::Seek},
@@ -116,7 +117,9 @@ class Netconnection
              * 
              * Command information object which has name-value pairs.
              **/
-            Object* CommandObject;
+            Object CommandObject;
+
+            virtual ~Command() = default;
         };
 
         struct Connect : public Command
@@ -207,7 +210,7 @@ class Netconnection
             /**
              * Any optional arguments to be provided.
              **/
-            Object OptionalUserArguments;
+            Object OptionalArguments;
         };
 
         struct CallResponse : public Command
@@ -230,7 +233,7 @@ class Netconnection
              * If there exists any command info, this is set.
              * Else, this is set to null type.
              **/
-            Object* CommandObject;
+            Object CommandObject;
             
             /**
              * Response
@@ -304,7 +307,12 @@ class Netconnection
              * 
              * There is no command object for onStatus messages.
              **/
-            Object* CommandObject = NULL;
+            Object CommandObject;
+
+            /**
+             * Information object.
+             **/
+            Object Information;
         };
 
         struct Play : public Command
@@ -329,7 +337,7 @@ class Netconnection
              * 
              * Command information does not exist. Set to null type.
              **/
-            Object* CommandObject = NULL;
+            Object CommandObject;
 
             /**
              * Stream Name
@@ -390,9 +398,9 @@ class Netconnection
             /**
              * Command Object
              * 
-             * 
+             * Command information does not exist. Set to null type.
              **/
-            Object* CommandObject = NULL;
+            Object CommandObject;
 
             /**
              * Parameters
@@ -400,20 +408,43 @@ class Netconnection
              * An AMF encoded object whose properties are the public properties described
              * for the flash.net.NetStreamPlayOptions ActionScript object.
              **/
-            Object parameters;
+            Object Parameters;
         };
 
         struct DeleteStream : public Command
         {
             /**
-             * Command Type
+             * Command type.
              **/
             CommandType type = CommandType::DeleteStream;
 
             /**
              * Command Name
              **/
-            string CommandName = "deleteStream";
+            string commandName = "deleteStream";
+
+            /**
+             * Transaction ID
+             **/
+            unsigned short TransactionID = 0;
+
+            /**
+             * Stream ID
+             **/
+            int StreamID = 0;
+        };
+
+        struct ReceiveAudio : public Command
+        {
+            /**
+             * Command Type
+             **/
+            CommandType type = CommandType::ReceiveAudio;
+
+            /**
+             * Command Name
+             **/
+            string CommandName = "receiveAudio";
 
             /**
              * Transaction ID
@@ -425,7 +456,7 @@ class Netconnection
              * 
              * Command information object does not exist. Set to null type.
              **/
-            Object* CommandObject = NULL;
+            Object CommandObject;
 
             /**
              * Bool Flag
@@ -457,7 +488,7 @@ class Netconnection
              * 
              * Command information object does not exist. Set to null type.
              **/
-            Object* CommandObject = NULL;
+            Object CommandObject;
 
             /**
              * Bool Flag
@@ -482,14 +513,14 @@ class Netconnection
             /**
              * Transaction ID is set to 0.
              **/
-            unsigned int TransactionID = 0;
+            unsigned short TransactionID = 0;
 
             /**
              * Command Object
              * 
              * Command information object does not exist. Set to null type.
              **/
-            Object* CommandObject = NULL;
+            Object CommandObject;
 
             /**
              * Publishing Name
@@ -532,14 +563,14 @@ class Netconnection
              * 
              * Transaction ID is set to 0.
              **/
-            unsigned int TransactionID = 0;
+            unsigned short TransactionID = 0;
 
             /**
              * Command Object
              * 
              * There is no command information object for this command. Set to null type.
              **/
-            Object* CommandObject = NULL;
+            Object CommandObject;
 
             /**
              * Milliseconds
@@ -566,14 +597,14 @@ class Netconnection
              * 
              * Transaction ID is set to 0.
              **/
-            unsigned int TransactionID = 0;
+            unsigned short TransactionID = 0;
 
             /**
              * Command Object
              * 
              * Command information object does not exist. Set to null type.
              **/
-            Object* CommandObject = NULL;
+            Object CommandObject;
 
             /**
              * Pause/Unpause Flag
@@ -590,66 +621,9 @@ class Netconnection
              * When the playback is resumed, the server will only send messages with
              * timestamps greater than this value.
              **/
-            int milliseconds = 0;
+            int Milliseconds = 0;
         };        
 
-
-
-        Command& GetCommandStruct(CommandType type)
-        {
-            switch (type)
-            {
-                case CommandType::Null:
-                    return Command(); 
-                    break;
-                case CommandType::Connect:
-                    return Connect();
-                    break;
-                case CommandType::ConnectResponse:
-                    return ConnectResponse();
-                    break;
-                case CommandType::Call:
-                    return Call();
-                    break;
-                case CommandType::CallResponse:
-                    return CallResponse();
-                    break;
-                case CommandType::CreateStream:
-                    return CreateStream();
-                    break;
-                case CommandType::CreateStreamResponse:
-                    return CreateStreamResponse();
-                    break;
-                case CommandType::OnStatus:
-                    return OnStatus();
-                    break;
-                case CommandType::Play:
-                    return Play();
-                    break;
-                case CommandType::Play2:
-                    return Play2();
-                    break;
-                case CommandType::DeleteStream:
-                    return DeleteStream();
-                    break;
-                case CommandType::ReceiveVideo:
-                    return ReceiveVideo();
-                    break;
-                case CommandType::Publish:
-                    return Publish();
-                    break;
-                case CommandType::Seek:
-                    return Seek();
-                    break;
-                case CommandType::Pause:
-                    return Pause();
-                    break;
-                default:
-                    return Command();
-                    break;
-                
-            }
-        }
 
     public:
         
