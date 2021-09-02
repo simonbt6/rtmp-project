@@ -208,13 +208,15 @@ namespace Utils
             static void DecodeNumber(unsigned char* bytes, int size, int& index, IntegerType& value)
             {
                 int length = 8;
-                unsigned char* data = Get(bytes, length, index + 2);
+                unsigned char* data = Get(bytes, length, index + 1);
                 index += 1 + length;
                 value = Utils::Math::IE754ToDouble(data);
+                printf("\nNumber value: %d", value);
             }
 
             static void DecodeString(unsigned char* bytes, int size, int& index, string& value)
             {
+                printf("\n");
                 if (size == 0) printf("\nError, data size is 0.");
                 int length = 0;
                 printf("\nIndex: %i", index);
@@ -225,11 +227,15 @@ namespace Utils
                     new unsigned char[2]{bytes[index + 1], bytes[index + 2]}, 
                     false, 
                     2);
+                printf("\nCalculated string length: %i", length);
              
                 unsigned char* data = Get(bytes, length, index + 3);
-                printf("\nData length: %i", length);
-                index += length + 2;
+                index += length + 3;
                 value = reinterpret_cast<char*>(data);
+
+                // Removes parasite data.
+                value = value.substr(0, length);
+                printf("\nActual String length: %i", value.length());
             }
 
             static void DecodeBoolean(unsigned char* bytes, int size, int& index, bool& value)
@@ -535,11 +541,17 @@ namespace Utils
                          * Transaction ID.
                          **/
                         DecodeNumber<unsigned short>(bytes, size, lastIndex, cmd->TransactionID);
+                        printf("\nTransaction ID: %i", cmd->TransactionID);
 
                         /**
                          * Command object.
                          **/
-                        DecodeObject(bytes, size, lastIndex, cmd->CommandObject);
+                        //DecodeObject(bytes, size, lastIndex, cmd->CommandObject);
+
+                        /**
+                         * Null
+                         **/
+                        lastIndex++;
 
                         return cmd;
                         break;
@@ -743,16 +755,24 @@ namespace Utils
                          * Transaction ID.
                          **/
                         DecodeNumber<unsigned short>(bytes, size, lastIndex, cmd->TransactionID);
+                        printf("\nTransaction ID: %i", cmd->TransactionID);
+
+                        /**
+                         * Null object.
+                         **/
+                        lastIndex++;
 
                         /**
                          * Publishing name.
                          **/
                         DecodeString(bytes, size, lastIndex, cmd->PublishingName);
+                        printf("\nPublishing name: %s", cmd->PublishingName);
 
                         /**
                          * Publishing type.
                          **/
                         DecodeString(bytes, size, lastIndex, cmd->PublishingType);
+                        printf("\nPublishing type: %s", cmd->PublishingType);
 
                         return cmd;
                         break;
