@@ -1,8 +1,10 @@
 # Test data informations
 
-## handshake.bin
+## handshakeC0C1.bin
 - Handshake C0+C1
     - Protocol version: 03
+    - Time: 13 B8 5A 18
+    - Zeros: 00 00 00 00
     - Handshake data: (1528 bytes)
 
 ## setchunksize.bin
