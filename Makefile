@@ -8,6 +8,10 @@ compile_server_windows:
 	cl test/win32_server.cpp /o'bin\win32_server.exe'
 	rm win32_server.obj
 
+compile_test_clang:
+	echo "Compiling RTMP lib test with CLANG"
+	c++ test/test.cpp -std=c++17 src/core/RTMPParser.cpp -o 'bin/test'
+
 compile_test_mac:
 	echo "Compiling RTMP lib test for MacOS..."
 	c++ test/test.cpp -std=c++17 src/core/RTMPParser.cpp -o 'bin/test.out'
