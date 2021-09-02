@@ -272,44 +272,45 @@ namespace Utils
                     {
                         case AMF0::type_markers::number_marker:       
                         {
-                            Field<int> field;
+                            Field<int>* field = new Field<int>();
                             
-                            DecodeNumber(bytes, size, index, field.m_Value);
+                            DecodeNumber(bytes, size, index, field->m_Value);
 
-                            return &field;
+                            return field;
                             break;
                         }
 
                         case AMF0::type_markers::boolean_marker:
                         {
-                            Field<bool> field;
-                            DecodeBoolean(bytes, size, index, field.m_Value);
+                            Field<bool>* field = new Field<bool>();
+                            DecodeBoolean(bytes, size, index, field->m_Value);
 
-                            return &field;
+                            return field;
                             break;
                         }
 
                         case AMF0::type_markers::string_marker:
                         {
-                            Field<string> field;
-                            DecodeString(bytes, size, index, field.m_Value);
+                            Field<string>* field = new Field<string>();
+                            DecodeString(bytes, size, index, field->m_Value);
 
-                            return &field;
+                            return field;
                             break;
                         }
 
                         case AMF0::type_markers::object_marker:
                         {
-                            Field<Netconnection::Object> field;
-                            DecodeObject(bytes, size, index, field.m_Value);
+                            Field<Netconnection::Object>* field = new Field<Netconnection::Object>();
+                            DecodeObject(bytes, size, index, field->m_Value);
 
-                            return &field;
+                            return field;
                             break;
                         }
 
                         case AMF0::type_markers::reference_marker:
                         {
                             printf("\nError, unsupported type marker. Reference marker.");
+                            return nullptr;
                             break;
                         }
                         
