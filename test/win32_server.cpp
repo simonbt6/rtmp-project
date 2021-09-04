@@ -1,17 +1,27 @@
 
+#define _HAS_STD_BYTE 0
+#define WIN32_LEAN_AND_MEAN
+
 #include <iostream>
-#include "../src/core/rtp.hpp"
-//#include "RTMPController.hpp"
 #include <fstream>
 
+#include "../src/core/RTMPHandshake.hpp"
+#include "../src/core/RTMPChunk.hpp"
+#include "../src/core/RTMPParser.hpp"
+#include "../src/core/RTMPSession.hpp"
+
+#include "../src/utils/FormatedPrint.hpp"
+
+
 #ifdef _WIN32
-#include <WS2tcpip.h>
 #include <windows.h>
-#include "WinSock2.h"
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #pragma comment("lib", "ws2_32.lib")
+// #pragma comment (lib, "Mswsock.lib")
 #endif
 
-#define PORT 9898
+#define PORT 1935
 #define DEFAULT_BUFLEN 4096
 #define DEFAULT_PORT "1935"
 
@@ -28,6 +38,7 @@ int main(int argc, char** argv) {
     struct addrinfo hints;
 
     int iSendResult;
+    vector<char> recvBuffer(DEFAULT_BUFLEN);
     char recvbuf[DEFAULT_BUFLEN];
     int recvbuflen = DEFAULT_BUFLEN;
     
@@ -94,27 +105,34 @@ int main(int argc, char** argv) {
     closesocket(ListenSocket);
 
     // Receive until the peer shuts down the connection
+    RTMP::Session session;
+    session.socket = ClientSocket;
     do {
 
-        iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
+        iResult = recv(ClientSocket, &recvBuffer[0], recvBuffer.size(), 0);
         if (iResult > 0) {
-            printf("Bytes received: %d\n", iResult);
-            //RTMPController::parseRequest(recvbuf);
-
-        // Echo the buffer back to the sender
-            iSendResult = send( ClientSocket, recvbuf, iResult, 0 );
+            printf("\n\n[Bytes received: %d]\n", iResult);
+            char* data;
+            int status = RTMP::Parser::ParseData(recvBuffer, session);
+            printf("\nSend status: %i", status);
+            if (!status) 
+            {
+                iSendResult = send( ClientSocket, recvbuf, iResult, 0 );
+                printf("\nMirrored data.");
+            }
+            // Echo the buffer back to the sender
             if (iSendResult == SOCKET_ERROR) {
                 printf("send failed with error: %d\n", WSAGetLastError());
                 closesocket(ClientSocket);
                 WSACleanup();
                 return 1;
             }
-            printf("Bytes sent: %d\n", iSendResult);
+            printf("\nBytes sent: %d", iSendResult);
         }
         else if (iResult == 0)
-            printf("Connection closing...\n");
+            printf("\nConnection closing...");
         else  {
-            printf("recv failed with error: %d\n", WSAGetLastError());
+            printf("\nrecv failed with error: %d\n", WSAGetLastError());
             closesocket(ClientSocket);
             WSACleanup();
             return 1;
