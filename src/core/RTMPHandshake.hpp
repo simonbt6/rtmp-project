@@ -11,7 +11,7 @@
  **/
 namespace Handshake
 {
-    enum State
+    enum class State
     {
         /** 
          * The protocol version is sent during this stage. 
@@ -23,7 +23,7 @@ namespace Handshake
         Uninitialized = 0,
         VersionSent = 1,
         AcknowledgeSent = 2,
-        DoneSent = 3
+        Done = 3
     };
     
     // C0 & S0
