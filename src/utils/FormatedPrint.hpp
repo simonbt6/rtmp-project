@@ -18,7 +18,8 @@ namespace Utils
          * FF FF FF FF FF FF FF FF   FF FF FF FF FF FF FF FF
          * ...
          **/
-        static void PrintBytes(int* arr, int length)
+        template <typename T = int>
+        static void PrintBytes(T* arr, int length)
         {
             for (int i = 0; i < length; i++)
             {
