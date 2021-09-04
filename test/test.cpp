@@ -7,17 +7,19 @@
 #include "../src/core/RTMPHandshake.hpp"
 #include "../src/core/RTMPChunk.hpp"
 #include "../src/core/RTMPParser.hpp"
-#include "../src/core/rtp.hpp"
+#include "../src/core/RTMPSession.hpp"
+
 #include "../src/utils/FormatedPrint.hpp"
-//#include "../include/RTMPController.hpp"
+
+#define RTP_VERSION 3
 
 using namespace std;
 
-vector<int> read(string path)
+vector<char> read(string path)
 {
     string line;
     vector<string> strdata;
-    vector<int> data;
+    vector<char> data;
     ifstream file(path);
     
     while(getline(file, line))
@@ -38,33 +40,43 @@ vector<int> read(string path)
 
 void readHandshakeTest()
 {
-    vector<int> data = read("data/handshake.bin");
+    vector<char> C0C1Data = read("data/handshakeC0C1.bin");
+    vector<char> C2Data = read("data/handshakeC2.bin");
 
+    vector<char> connectCmd = read("data/connect.bin");
+    vector<char> createstreamCmd = read("data/createstream.bin");
 
     // Parse handshake
-    Handshake::Handshake handshake;
-    RTMP::Parser::ParseHandshake(data, handshake);
+    RTMP::Session session;
+    RTMP::Parser::ParseData(C0C1Data, session.handshake);
+    printf("\nF0 & F1 parsed. Parsing F2...");
+    RTMP::Parser::ParseData(C2Data, session.handshake);
+
     
     // Validate RTMP packet version.
-    if (!(handshake.C0.version == RTP_VERSION)) 
+    if (!(session.handshake.C0.version == RTP_VERSION)) 
         printf("RTMP packet not valid.");
 
-    printf("\nRTMP Version: %i", handshake.C0.version);
-    printf("\nC1 Time: %i %i %i %i", 
-            handshake.C1.time[0], 
-            handshake.C1.time[1], 
-            handshake.C1.time[2], 
-            handshake.C1.time[3]
+    // Handshake done.
+    RTMP::Parser::ParseData(connectCmd, session.handshake);
+    RTMP::Parser::ParseData(createstreamCmd, session.handshake);
+
+    printf("\nRTMP Version: %i", session.handshake.C0.version);
+    printf("\nC1 Time: %X %X %X %X", 
+            session.handshake.C1.time[0], 
+            session.handshake.C1.time[1], 
+            session.handshake.C1.time[2], 
+            session.handshake.C1.time[3]
     );
     printf("\nC1 random bytes: ");
-    Utils::FormatedPrint::PrintBytes((int*)handshake.C1.randomBytes, RANDOM_BYTES_COUNT);
+    //Utils::FormatedPrint::PrintBytes((int*)handshake.C1.randomBytes, RANDOM_BYTES_COUNT);
 }
 
 void readCommandTest()
 {
-    vector<int> data = read("data/setchunksize.bin");
+    vector<char> data = read("data/publishtest.bin");
 
-    Utils::FormatedPrint::PrintBytes(data.data(), data.size());
+    Utils::FormatedPrint::PrintBytes((int*)data.data(), data.size());
 
     RTMP::Chunk chunk;
 
@@ -73,8 +85,8 @@ void readCommandTest()
 
 int main()
 {
-    //readHandshakeTest();
-    readCommandTest();
+    readHandshakeTest();
+    //readCommandTest();
 }
 /**
  * Message type ID:
