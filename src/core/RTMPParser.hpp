@@ -6,13 +6,13 @@
  **/
 #pragma once
 
+#include "RTMPSession.hpp"
 #include "RTMPHandshake.hpp"
 #include "RTMPMessage.hpp"
 #include "RTMPChunk.hpp"
 #include "../utils/Bit.hpp"
 #include "../utils/FormatedPrint.hpp"
 #include "../utils/amf0.hpp"
-#include "rtp.hpp"
 
 #include <iostream>
 #include <vector>
@@ -26,17 +26,17 @@ namespace RTMP
             /** 
              * Handshake parsing.
              **/
-            static void ParseF0(vector<int>& data, Handshake::Handshake& handshake);
-            static void ParseF1(vector<int>& data, Handshake::Handshake& handshake);
-            static void ParseF2(vector<int>& data, Handshake::Handshake& handshake);
+            static void ParseHandshakeF0(vector<char>& data, Handshake::Handshake& handshake);
+            static void ParseHandshakeF1(vector<char>& data, Handshake::Handshake& handshake);
+            static void ParseHandshakeF2(vector<char>& data, Handshake::Handshake& handshake);
             
             /**
              * Chunk parsing.
              **/
-            static void ParseChunkBasicHeader(vector<int>& data, Chunk& chunk);
-            static void ParseChunkMessageHeader(vector<int>& data, Chunk& chunk);
-            static void ParseChunkExtendedTimestamp(vector<int>& data, Chunk& chunk);
-            static void ParseChunkData(vector<int>& data, Chunk& chunk);
+            static void ParseChunkBasicHeader(vector<char>& data, Chunk& chunk);
+            static void ParseChunkMessageHeader(vector<char>& data, Chunk& chunk);
+            static void ParseChunkExtendedTimestamp(vector<char>& data, Chunk& chunk);
+            static void ParseChunkData(vector<char>& data, Chunk& chunk);
 
             /**
              * Command parsing.
@@ -49,7 +49,7 @@ namespace RTMP
             Parser() {};
 
         public:
-            static void ParseHandshake(vector<int>& data, Handshake::Handshake& handshake);
-            static void ParseChunk(vector<int>& data, Chunk& chunk);
+            static int ParseData(vector<char>& data, Session& session);
+            static int ParseChunk(vector<char>& data, Session& session);
     };
 }
