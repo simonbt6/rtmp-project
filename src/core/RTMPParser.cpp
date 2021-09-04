@@ -7,6 +7,11 @@
 #define __DEBUG true
 
 #include "RTMPParser.hpp"
+#include "RTMPSession.hpp"
+#include "RTMPHandler.hpp"
+
+
+#define LIVE
 
 using namespace std;
 
@@ -15,8 +20,9 @@ namespace RTMP {
     /**
      * Version: 1 byte
      **/
-    void Parser::ParseF0(vector<int>& data, Handshake::Handshake& handshake)
+    void Parser::ParseHandshakeF0(vector<char>& data, Handshake::Handshake& handshake)
     {
+        printf("\nParsing version.");
         handshake.C0.version = (unsigned short int) data.at(0);        
     }
 
@@ -25,8 +31,9 @@ namespace RTMP {
      * Zeros: 4 bytes.
      * Random bytes: 1528 bytes.
      **/
-    void Parser::ParseF1(vector<int>& data, Handshake::Handshake& handshake)
+    void Parser::ParseHandshakeF1(vector<char>& data, Handshake::Handshake& handshake)
     {
+        printf("\nParsing F1.");
         // Time
         for (int i = 0; i < TIME_BYTES_COUNT + 1; i++)
             handshake.C1.time[i] = data.at(i + 1);
@@ -34,6 +41,7 @@ namespace RTMP {
         // Random bytes
         for (int i = 0; i < RANDOM_BYTES_COUNT; i++)
             handshake.C1.randomBytes[i] = data.at(i + 9);
+        //Utils::FormatedPrint::PrintBytes((int*)handshake.C1.randomBytes, RANDOM_BYTES_COUNT);
     }
 
     /**
@@ -41,8 +49,9 @@ namespace RTMP {
      * Time2: 4 bytes.
      * Random bytes: 1528 bytes.
      **/
-    void Parser::ParseF2(vector<int>& data, Handshake::Handshake& handshake)
+    void Parser::ParseHandshakeF2(vector<char>& data, Handshake::Handshake& handshake)
     {
+        printf("\nParsing F2.");
         for (int i = 0; i < TIME_BYTES_COUNT; i++) 
             handshake.C2.time[i] = data.at(i);
         for (int i = 0; i < TIME_BYTES_COUNT; i++)
@@ -51,29 +60,70 @@ namespace RTMP {
             handshake.C2.randomBytes[i] = data.at(i + (2*TIME_BYTES_COUNT));
     }
 
-    void Parser::ParseHandshake(vector<int>& data, Handshake::Handshake& handshake)
+    int Parser::ParseData(vector<char>& data, Session& session)
     {
+        int status = 0;
         int size = data.size();
-        
-        // F0 & F1
-        if (size == 1537)
+        Handshake::Handshake& handshake = session.handshake;
+
+        /**
+         * Hanshake state: 
+         *  - Uninitialized: 
+         *      - F0 & F1 not sent.
+         *  - Version sent: 
+         *      - F0 & F1 sent, but not F2.
+         *      - F0 & F1 not received.
+         *  - Ack sent: 
+         *      - F2 sent.
+         *      - F0 & F1 received, but not F2.
+         *  - Done: 
+         *      - F2 received.
+         **/
+        switch (handshake.state)
         {
-            Parser::ParseF0(data, handshake);
-            Parser::ParseF1(data, handshake);
-            handshake.state = Handshake::State::VersionSent;
-        }
-        // F1
-        else if (size == 1536)
-        {
-            Parser::ParseF1(data, handshake);
-            handshake.state = Handshake::State::AcknowledgeSent;
-        }
-        // Probably F2
-        else
-        {
-            Parser::ParseF2(data, handshake);
-            handshake.state = Handshake::State::DoneSent;
-        }
+            case Handshake::State::Uninitialized:
+            {
+                printf("\nParsing C0 & C1...");
+
+                // Parse C0 & C1.
+                Parser::ParseHandshakeF0(data, handshake);
+                Parser::ParseHandshakeF1(data, handshake);
+
+                // Send S0 & S1.
+                status = Handler::SendHandshake(session);
+
+                printf("\nVersion sent.");
+                handshake.state = Handshake::State::VersionSent;
+            };
+            case Handshake::State::VersionSent:
+            {
+                printf("\nAcknowledge sent.");
+                handshake.state = Handshake::State::AcknowledgeSent;
+                break;
+            };
+
+            case Handshake::State::AcknowledgeSent:
+            {
+                // Parse C2.
+                Parser::ParseHandshakeF2(data, handshake);
+                
+                // Send S2.
+                status = Handler::SendHandshake(session);
+
+                printf("\nHandshake done.");
+                handshake.state = Handshake::State::Done;
+                break;
+            };
+
+            case Handshake::State::Done:
+            {
+                printf("\nHandshake done. Processing chunk.");
+                // Chunk parsing.
+                ParseChunk(data, session);
+                break;
+            };
+        };
+        return status;
     }
 
 
@@ -81,7 +131,7 @@ namespace RTMP {
      * Chunk Parsing.
      **/
 
-    void Parser::ParseChunkBasicHeader(vector<int>& data, Chunk& chunk)
+    void Parser::ParseChunkBasicHeader(vector<char>& data, Chunk& chunk)
     {
         // Byte 0
         unsigned int bZero = (unsigned) data.at(0);
@@ -107,7 +157,7 @@ namespace RTMP {
         chunk.basicHeader.fmt = fmt;
     }
 
-    void Parser::ParseChunkMessageHeader(vector<int>& data, Chunk& chunk)
+    void Parser::ParseChunkMessageHeader(vector<char>& data, Chunk& chunk)
     {
         int fmt = chunk.basicHeader.fmt;
         int baseI = (chunk.basicHeader.baseID * -1) + 3;
@@ -199,7 +249,7 @@ namespace RTMP {
         };
     }
 
-    void Parser::ParseChunkExtendedTimestamp(vector<int>& data, Chunk& chunk)
+    void Parser::ParseChunkExtendedTimestamp(vector<char>& data, Chunk& chunk)
     {
         if (!(chunk.messageHeader.timestamp_delta == 0xFFFFFF)) 
             return;
@@ -217,7 +267,7 @@ namespace RTMP {
         chunk.displacement += 4;
     }
 
-    void Parser::ParseChunkData(vector<int>& data, Chunk& chunk) 
+    void Parser::ParseChunkData(vector<char>& data, Chunk& chunk) 
     {
         int size = data.size() - chunk.displacement;
 
@@ -230,8 +280,15 @@ namespace RTMP {
         chunk.data = bData;
     }
 
-    void Parser::ParseChunk(vector<int>& data, Chunk& chunk)
+    int Parser::ParseChunk(vector<char>& data, Session& session)
     {
+        Chunk chunk;
+        char* response = nullptr;
+        int status = 0;
+
+        /**
+         * Parse chunk.
+         **/
         ParseChunkBasicHeader(data, chunk);
         ParseChunkMessageHeader(data, chunk);
         ParseChunkExtendedTimestamp(data, chunk);
@@ -243,14 +300,16 @@ namespace RTMP {
         if (chunk.messageHeader.message_type_id == 0)
         {
             // Idk if this is possible.
+            printf("\nMessage type ID of 0.");
         }
         else if (6 >= chunk.messageHeader.message_type_id)
         {
-            int chunksize = 0;
             // Protocol control message.
             switch (chunk.messageHeader.message_type_id)
             {
                 case ProtocolControlMessage::Type::SetChunkSize:
+                {
+                    int chunksize = 0;
                     Utils::BitOperations::bytesToInteger(
                         chunksize, 
                         chunk.data, 
@@ -258,24 +317,39 @@ namespace RTMP {
                         chunk.messageHeader.message_length);
                     printf("\nProtocol control message: Set chunk size %i.", chunksize);
                     break;
+                };
                 case ProtocolControlMessage::Type::Abort:
-                    printf("\nProtocol control message: Abort.");
+                {
+                    int csid = 0;
+                    Utils::BitOperations::bytesToInteger(
+                        csid,
+                        chunk.data,
+                        false,
+                        chunk.messageHeader.message_length
+                    );
+                    printf("\nProtocol control message: Abort. Stream ID: %i", csid);
                     break;
+                };
                 case ProtocolControlMessage::Type::Acknowledgement:
+                {
                     printf("\nProtocol control message: Acknowledgement.");
                     break;
+                };
                 case ProtocolControlMessage::Type::WindowAcknowledgementSize:
+                {
                     printf("\nProtocol control message: Window Acknowledgement size.");
                     break;
+                }
                 case ProtocolControlMessage::Type::SetPeerBandwidth:
+                {
                     printf("\nProtocol control message: Set peer Bandwidth.");
                     break;
+                }
             };
         }
         // Normal message.
         else
         {
-            Utils::AMF0::Message message;
             switch (chunk.messageHeader.message_type_id)
             {
                 case Message::Type::AudioMessage:
@@ -293,6 +367,7 @@ namespace RTMP {
                     Netconnection::Command* command = Utils::AMF0Decoder::DecodeCommand(
                         chunk.data, 
                         chunk.messageHeader.message_length);
+                    status = Handler::SendCommandMessage(command, session);
                     printf("\n");
                     break;
                 }
@@ -321,6 +396,7 @@ namespace RTMP {
         if (chunk.basicHeader.fmt == ChunkHeader::MessageHeader::ChunkHeaderFormat::Type0)
             printf("\nMessage stream ID: %i", chunk.messageHeader.message_stream_id);
         #endif
+        return status;
     }
 
 }
