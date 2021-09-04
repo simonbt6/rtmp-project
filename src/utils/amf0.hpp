@@ -58,130 +58,43 @@ namespace Utils
                 avm_object_marker   = 0x11
             };
 
-            /**
-             * Number type.
-             * 
-             * Marker: number-marker. 
-             * 
-             * An AMF0 Number type is used to encode an ActionScript Number.
-             * The data following Number marker is always an 8-byte IEEE754
-             * double precision floating point value in network byte order.
-             * 
-             **/
-            typedef struct
+    };
+
+    class AMF0Encoder
+    {
+        public:
+            static unsigned char* EncodeNumber(double value)
             {
-                double value;
-                unsigned char* data;
+                unsigned char* bytes = new unsigned char[9];
 
-            } Number;
+                bytes[0] = AMF0::type_markers::number_marker;
 
-            /**
-             * Boolean type.
-             * 
-             * Marker: boolean-marker.
-             * 
-             * An AMF0 Boolean type is used to encode a primitive ActionScript
-             * 1.0 or 2.0 Boolean or an ActionScript 3.0 Boolean. The Object
-             * (non-primitive) version of ActionScript 1.0 or 2.0 are not seria-
-             * lizable. A Boolean type marker is followed by an unsigned byte;
-             * a zero byte value denotes false while a non-zero byte value (i.e. 1)
-             * denotes true.
-             * 
-             **/
-            typedef struct
+                return bytes;
+            }
+
+            static unsigned char* EncodeBoolean(bool value)
             {
-                bool value;
-                unsigned char* data;
-            } Boolean;
+                unsigned char* bytes = new unsigned char[2];
+                bytes[0] = AMF0::type_markers::boolean_marker;
+                bytes[1] = value;
+                return bytes;
+            }
 
-            /**
-             * String Type.
-             * 
-             * Marker: string-marker.
-             * 
-             * All strings in AMF are encoded using UTF-8; however, the byte-
-             * length header format may vary. The AMF0 String type uses the
-             * standard byte-length header (ie U16). For long Strings that 
-             * require more than 65535 bytes to encode in UTF-8, the AMF0 Long
-             * String type should be used.
-             **/
-            typedef struct
+            static unsigned char* EncodeString(string value)
             {
-                char* value;
-                unsigned short int length;
-                unsigned char* data;
-            } String;
+                unsigned char* bytes = new unsigned char[value.length() + 3];
+                bytes[0] = AMF0::type_markers::string_marker;
+                bytes[1] = value.length() / 256;
+                bytes[2] = value.length() % 256;
+                for (int i = 0; i < value.length(); i++)
+                    bytes[i + 3] = value[i];
+                return bytes;
+            }
 
-            /**
-             * Object type.
-             * 
-             * The AMF0 Object type is used to encode anonymous ActionScript object.
-             * Any typed object that does not have a registred class should be treated
-             * as an anonymous ActionScript object. If the same object instance appears
-             * in an object graph it should be sent by reference using an AMF0.
-             * 
-             * Use the reference type to reduce redundant information from being serialized
-             * and infinite loops from cyclical references.
-             * 
-             * Marker: object-marker
-             **/
-            typedef struct
+            static unsigned char* EncodeObject(Netconnection::Object value)
             {
-                unsigned char* data;
-                unsigned int length;
-                Netconnection::Object object;
-            } Object;
 
-            /**
-             * Reference type.
-             * 
-             * AMF0 defines a complex object as an anonymous object, a typed object, an array
-             * or an ecma-array. If the exact same instance of a complex object appears more 
-             * than once in an object graph, then it must be sent by reference. The reference
-             * type uses an unsigned 16-bit integer to an index in a table of previously 
-             * serialized objects. Indices start at 0.
-             **/
-            typedef struct
-            {
-                unsigned short int reference;
-            } Reference;
-
-            /**
-             * Long String Type
-             * 
-             * Marker: long-string-marker.
-             * 
-             * A long string type is used in AMF0 to encode strings that would
-             * occupy more than 65535 bytes when UTF-8 encoded. The byte-length
-             * header for the UTF-8 encoded string is a 32-bit integer instead
-             * of a regular 16-bit integer.
-             **/
-            typedef struct
-            {
-                string value;
-                unsigned int length;
-                unsigned char* data;
-            } LongString;
-
-            typedef struct
-            {
-                Number* numbers;
-                unsigned short numberCount = 0;
-
-                Boolean* booleans;
-                unsigned short booleanCount = 0;
-
-                String* strings;
-                unsigned short stringCount = 0;
-
-                Object* objects;
-                unsigned short objectCount = 0;
-
-                Reference* references;
-                unsigned short referenceCount = 0;
-
-            } Message;
-            
+            }
     };
     
     class AMF0Decoder
