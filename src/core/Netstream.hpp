@@ -8,9 +8,21 @@
  *  - https://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/flash/net/NetStreamPlayOptions.html
  **/
 
+#include "Netconnection.hpp"
+#include "RTMPSession.hpp"
+
+using namespace RTMP;
+
 class NetStream
 {
     public:
+        enum class PlayStatus
+        {
+            Uninitialized,
+            Pause,
+            Resumed,
+            Stopped,
+        };
         /** 
          * Client commands.
          **/
@@ -33,7 +45,7 @@ class NetStream
          *  - Duration: Optional param. that specifies the duration of the playback in seconds.
          *  - Reset: Bool. Whether to flush any previous playlist.
          **/
-        void play();
+        void play(Netconnection::Play&, RTMP::Session&);
         /**
          * Play2 can switch to a different bit rate stream without changing
          * the timeline of the content played.
@@ -46,7 +58,7 @@ class NetStream
          *                described for the flash.net.NetStreamPlayOptions ActionScript object.
          *                (See documentation.)
          **/
-        void play2();
+        void play2(Netconnection::Play2&, RTMP::Session&);
         /**
          * NetStream sends the deleteStream command when the NetStream object is getting destroyed.
          * 
@@ -58,13 +70,13 @@ class NetStream
          * 
          * Server doesn't send any response.
          **/
-        void deleteStream();
-        void closeStream();
-        void receiveAudio();
-        void receiveVideo();
-        void publish();
-        void seek();
-        void pause();
+        void deleteStream(Netconnection::DeleteStream&, RTMP::Session&);
+        void closeStream(); //???
+        void receiveAudio(Netconnection::ReceiveAudio&, RTMP::Session&);
+        void receiveVideo(Netconnection::ReceiveVideo&, RTMP::Session&);
+        void publish(Netconnection::Publish&, RTMP::Session&);
+        void seek(Netconnection::Seek&, RTMP::Session&);
+        void pause(Netconnection::Pause&, RTMP::Session&);
 
         /** 
          * Server commands.
@@ -82,5 +94,5 @@ class NetStream
          *      - ex: "NetStream.Play.Start"
          *  - Description: a human readable description of the message.
          **/
-        void onStatus();
+        void onStatus(Netconnection::OnStatus&, RTMP::Session&);
 };
