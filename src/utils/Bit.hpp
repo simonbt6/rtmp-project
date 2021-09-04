@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <vector>
 #include <random>
+#include <math.h>
 
 using namespace std;
 
@@ -49,9 +50,9 @@ namespace Utils
         {
             char* arr = new char[size];
             random_device engine;
-            uniform_int_distribution<unsigned int> distribution(0x00, 0xFF);
+            uniform_int_distribution<short> distribution(0x00, 0xFF);
             for (int i = 0; i < size; i++)
-                arr[i] = (unsigned char)distribution(engine);
+                arr[i] = abs((char)distribution(engine));
             return arr;
         }       
     };
