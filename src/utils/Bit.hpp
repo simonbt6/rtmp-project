@@ -45,16 +45,14 @@ namespace Utils
                     f |= 1 << i;
             return f;
         }
-        
-        static char* generateRandomBytes(int size)
+
+        static char* GenerateRandom8BitBytes(int size)
         {
             char* arr = new char[size];
-            random_device engine;
-            uniform_int_distribution<short> distribution(0x00, 0xFF);
             for (int i = 0; i < size; i++)
-                arr[i] = abs((char)distribution(engine));
+                arr[i] = abs(rand()%128);
             return arr;
-        }       
+        }  
     };
 
         
