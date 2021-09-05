@@ -85,12 +85,16 @@ namespace RTMP {
             {
                 printf("\nParsing C0 & C1...");
 
+                //Utils::FormatedPrint::PrintBytes<unsigned char>(reinterpret_cast<unsigned char*>(data.data()), data.size());
+
                 // Parse C0 & C1.
                 Parser::ParseHandshakeF0(data, handshake);
                 Parser::ParseHandshakeF1(data, handshake);
 
                 // Send S0 & S1.
+                #ifdef LIVE
                 status = Handler::SendHandshake(session);
+                #endif
 
                 printf("\nVersion sent.");
                 handshake.state = Handshake::State::VersionSent;
@@ -108,7 +112,9 @@ namespace RTMP {
                 Parser::ParseHandshakeF2(data, handshake);
                 
                 // Send S2.
-                status = Handler::SendHandshake(session);
+                #ifdef LIVE
+                //status = Handler::SendHandshake(session);
+                #endif
 
                 printf("\nHandshake done.");
                 handshake.state = Handshake::State::Done;
