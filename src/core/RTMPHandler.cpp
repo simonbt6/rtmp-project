@@ -8,15 +8,38 @@
 namespace RTMP
 {
     /**
+     * Handle sent data.
+     **/
+
+    int Handler::SendData(SOCKET socket, char* data, int length)
+    {
+        // Only supports win32 for now.
+        #ifdef _WIN32
+        printf("\nSending %i bytes.", length);
+        //Utils::FormatedPrint::PrintBytes<char>(data, length);
+        return send(socket, data, length, 0);
+        #else
+        printf("\n\nTCP NOT IMPLEMENTED ON THIS PLATFORM.");
+        #endif
+        return 0;
+    }
+
+    /**
      * Handle received data.
      **/
 
-    void Handler::HandleCommandMessage(Netconnection::Command* command, Session& session)
+    int Handler::HandleCommandMessage(Netconnection::Command* command, Session& session)
     {
+        if (command == nullptr) return -1;
+        
         switch (command->type)
         {
+            /**
+             * Sends a connect response.
+             **/
             case CommandType::Connect:
             {
+                printf("\n\nConnect command response.");
                 Netconnection::Connect* cmd = 
                     dynamic_cast<Netconnection::Connect*>(command);
                 
@@ -32,17 +55,17 @@ namespace RTMP
                 int transactionID = 1;
                 
 
-                unsigned char* commandNameData =
+                Utils::AMF0::Data commandNameData =
                     Utils::AMF0Encoder::EncodeString(commandName);
-                unsigned char* transactionIDData = 
+
+                Utils::AMF0::Data transactionIDData = 
                     Utils::AMF0Encoder::EncodeNumber(transactionID);
-
-                //data.insert(data.end(), commandNameData, commandName.length());
-                //data.insert(data.end(), transactionIDData, 8);
-
                 
 
-                SendData(session.socket, data.data(), data.size());
+                data.insert(data.end(), reinterpret_cast<char*>(commandNameData.data), reinterpret_cast<char*>(commandNameData.data)+commandNameData.size);
+                data.insert(data.end(), reinterpret_cast<char*>(transactionIDData.data), reinterpret_cast<char*>(transactionIDData.data)+transactionIDData.size);
+
+                return SendData(session.socket, data.data(), data.size());
 
                 break;
             };
@@ -137,6 +160,7 @@ namespace RTMP
                 break;
             };
         }
+        return 0;
     }
 
     void Handler::HandleVideoMessage(unsigned char*, Session& session)
@@ -149,24 +173,6 @@ namespace RTMP
 
     }
 
-
-    /**
-     * Handle sent data.
-     **/
-
-    int Handler::SendData(SOCKET socket, char* data, int length)
-    {
-        // Only supports win32 for now.
-        #ifdef _WIN32
-        printf("\nSending %i bytes.", length);
-        Utils::FormatedPrint::PrintBytes<char>(data, length);
-        return send(socket, data, length, 0);
-        #else
-        printf("\n\nTCP NOT IMPLEMENTED ON THIS PLATFORM.");
-        #endif
-        return 0;
-    }
-
     int Handler::SendHandshake(Session& session)
     {
         char* data;
@@ -176,13 +182,7 @@ namespace RTMP
         {
             case Handshake::State::Uninitialized:
             {
-                data = new char[1537];
-
-                /**
-                 * S0:
-                 *  - Version
-                 **/
-                data[0] = handshake.C0.version;
+                data = new char[3073];
 
                 /**
                  * S1: 
@@ -190,16 +190,31 @@ namespace RTMP
                  *  - zero: 4 bytes.
                  *  - random bytes: 1528 bytes.
                  **/
-                char* randomData = 
-                    Utils::BitOperations::generateRandomBytes(RANDOM_BYTES_COUNT);
+                char* randomData = Utils::BitOperations::GenerateRandom8BitBytes(RANDOM_BYTES_COUNT);
 
+                // S0
+                data[0] = handshake.C0.version;
+                
                 for (int i = 0; i < TIME_BYTES_COUNT; i++)
-                    data[i + 1] = handshake.C1.time[i];
-                for (int i = 0; i < TIME_BYTES_COUNT; i++)
-                    data[i + 5] = 0;
+                {
+                    // S1
+                    data[i + 1] = 0;
+
+                    // S2
+                    data[i + 1537] = handshake.C1.time[i];
+                    data[i + 1537 + TIME_BYTES_COUNT] = handshake.C1.time[i];
+                }
+
                 for (int i = 0; i < RANDOM_BYTES_COUNT; i++)
-                    data[i + 9] = randomData[i];
-                return SendData(session.socket, data, 1537);
+                {
+                    // S1
+                    data[i + 5] = randomData[i];
+
+                    // S2
+                    data[i + 1537 + (2 * TIME_BYTES_COUNT)] = handshake.C1.randomBytes[i];
+                }
+
+                return SendData(session.socket, data, 3073);
                 break;
             };
 
@@ -211,21 +226,8 @@ namespace RTMP
 
             case Handshake::State::AcknowledgeSent:
             {
-                data = new char[1536];
 
-                /**
-                 * S2:
-                 *  - time: 4 bytes.
-                 *  - time2: 4 bytes.
-                 *  - random bytes: 1528 bytes.
-                 **/
-                for (int i  = 0; i < TIME_BYTES_COUNT; i++)
-                    data[i] = handshake.C1.time[i];
-                for (int i = 0; i < TIME_BYTES_COUNT; i++)
-                    data[i + 4] = handshake.C1.time[i];
-                for (int i = 0; i < RANDOM_BYTES_COUNT; i++)
-                    data[i + 8] = handshake.C1.randomBytes[i];
-                return SendData(session.socket, data, 1536);
+                return 0;
                 break;
             };
 

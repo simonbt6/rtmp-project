@@ -15,6 +15,8 @@
 #include "../utils/Bit.hpp"
 #include "../utils/amf0.hpp"
 
+#include <iterator>
+
 
 /**
  * win32 specific imports.
@@ -36,7 +38,7 @@ namespace RTMP
             /**
              * Handle incoming data.
              **/
-            static void HandleCommandMessage(Netconnection::Command*, Session&);
+            static int HandleCommandMessage(Netconnection::Command*, Session&);
             static void HandleVideoMessage(unsigned char*, Session&);
             static void HandleAudioMessage(unsigned char*, Session&);
 
