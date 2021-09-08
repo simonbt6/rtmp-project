@@ -27,6 +27,16 @@ namespace Utils
     class AMF0
     {
         public:
+
+            /**
+             * Used to convay data.
+             **/
+            typedef struct
+            {
+                unsigned char* data;
+                int size;
+            } Data;
+
             /**
              * Types
              **/
@@ -63,37 +73,57 @@ namespace Utils
     class AMF0Encoder
     {
         public:
-            static unsigned char* EncodeNumber(double value)
+            static AMF0::Data EncodeNumber(double value)
             {
-                unsigned char* bytes = new unsigned char[9];
+                AMF0::Data data;
 
-                bytes[0] = AMF0::type_markers::number_marker;
+                data.size = 5;
+                data.data = new unsigned char[data.size];
 
-                return bytes;
+                data.data[0] = AMF0::type_markers::number_marker;
+
+                int* numberData = Utils::Math::DoubleToIEEE754(value);
+                for (int i = 0; i < 8; i++)
+                    data.data[i + 1] = numberData[i];
+
+                return data;
             }
 
-            static unsigned char* EncodeBoolean(bool value)
+            static AMF0::Data EncodeBoolean(bool value)
             {
-                unsigned char* bytes = new unsigned char[2];
-                bytes[0] = AMF0::type_markers::boolean_marker;
-                bytes[1] = value;
-                return bytes;
+                AMF0::Data data;
+
+                data.size = 2;
+                data.data = new unsigned char[data.size];
+                
+                data.data[0] = AMF0::type_markers::boolean_marker;
+                data.data[1] = value;
+
+                return data;
             }
 
-            static unsigned char* EncodeString(string value)
+            static AMF0::Data EncodeString(string value)
             {
-                unsigned char* bytes = new unsigned char[value.length() + 3];
-                bytes[0] = AMF0::type_markers::string_marker;
-                bytes[1] = value.length() / 256;
-                bytes[2] = value.length() % 256;
+                AMF0::Data data;
+                data.size = value.length() + 3;
+                data.data = new unsigned char[data.size];
+
+                data.data[0] = AMF0::type_markers::string_marker;
+                
+                data.data[1] = value.length() / 256;
+                data.data[2] = value.length() % 256;
+
                 for (int i = 0; i < value.length(); i++)
-                    bytes[i + 3] = value[i];
-                return bytes;
+                    data.data[i + 3] = value[i];
+
+                return data;
             }
 
-            static unsigned char* EncodeObject(Netconnection::Object value)
+            static AMF0::Data EncodeObject(Netconnection::Object value)
             {
+                AMF0::Data data;
 
+                return data;
             }
     };
     
