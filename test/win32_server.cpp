@@ -17,7 +17,7 @@
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#pragma comment("lib", "ws2_32.lib")
+#pragma comment(lib, "ws2_32.lib")
 // #pragma comment (lib, "Mswsock.lib")
 #endif
 
@@ -25,6 +25,11 @@
 #define DEFAULT_BUFLEN 4096
 #define DEFAULT_PORT "1935"
 
+void SignedToUnsignedVector(vector<char>& in, vector<unsigned char>& out, int length)
+{
+    in.resize(length);
+    out.insert(out.end(), in.begin(), in.end());    
+}
 
 int main(int argc, char** argv) {
 
@@ -39,7 +44,7 @@ int main(int argc, char** argv) {
 
     int iSendResult;
     vector<char> recvBuffer(DEFAULT_BUFLEN);
-    char recvbuf[DEFAULT_BUFLEN];
+    vector<unsigned char> recvData;
     int recvbuflen = DEFAULT_BUFLEN;
     
     // Initialize Winsock
@@ -92,6 +97,14 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    int flags = 1;
+    setsockopt(ListenSocket, IPPROTO_TCP, TCP_NODELAY, (char *)&flags, sizeof(flags));
+    if (iResult == SOCKET_ERROR)
+    {
+        printf("\nsetsockopt failed.");
+    }
+    printf("\nRTMP server listening on port 1935.");
+
     // Accept a client socket
     ClientSocket = accept(ListenSocket, NULL, NULL);
     if (ClientSocket == INVALID_SOCKET) {
@@ -111,18 +124,22 @@ int main(int argc, char** argv) {
 
         iResult = recv(ClientSocket, &recvBuffer[0], recvBuffer.size(), 0);
         if (iResult > 0) {
+
             printf("\n\n[Bytes received: %d]\n", iResult);
-            char* data;
-            int status = RTMP::Parser::ParseData(recvBuffer, session);
-            printf("\nSend status: %i", status);
-            if (!status) 
+
+            SignedToUnsignedVector(recvBuffer, recvData, iResult);
+
+            iSendResult = RTMP::Parser::ParseData(recvData, session);
+            printf("\nSend status: %i", iSendResult);
+
+            if (!iSendResult) 
             {
-                iSendResult = send( ClientSocket, recvbuf, iResult, 0 );
+                iSendResult = send( ClientSocket, &recvBuffer[0], recvBuffer.size(), 0);
                 printf("\nMirrored data.");
             }
-            // Echo the buffer back to the sender
+            
             if (iSendResult == SOCKET_ERROR) {
-                printf("send failed with error: %d\n", WSAGetLastError());
+                printf("\nsend failed with error: %d\n", WSAGetLastError());
                 closesocket(ClientSocket);
                 WSACleanup();
                 return 1;
