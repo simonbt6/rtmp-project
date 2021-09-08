@@ -1,14 +1,16 @@
 # RTMP Lib C++ implementation.
 
 # Requirements:
-- MSVC compiler 2015+ or CLANG 10+ compiler installed.
-- MacOS or Windows (Linux coming soon...)
-- CMake 3+
+- CMake 3.8+
+- C/C++ compiler installed & on path.
 
 # Installation:
 - Clone repository.  
 ```git clone https://github.com/simonbt6/rtmp-lib.git```
-- Compile desired test file.  
-```make compile_test_windows```  
-```make compile_server_windows```  
-```make compile_test_mac```  
+- Compile desired target.    
+    - Build all targets:  
+```cmake --build . ```  
+    - Build windows server:  
+```cmake --build . --target server```
+    - Build handshake test data:  
+```cmake --build . --target test_handshake```
