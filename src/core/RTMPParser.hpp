@@ -26,17 +26,17 @@ namespace RTMP
             /** 
              * Handshake parsing.
              **/
-            static void ParseHandshakeF0(vector<char>& data, Handshake::Handshake& handshake);
-            static void ParseHandshakeF1(vector<char>& data, Handshake::Handshake& handshake);
-            static void ParseHandshakeF2(vector<char>& data, Handshake::Handshake& handshake);
+            static void ParseHandshakeF0(vector<unsigned char>& data, Handshake::Handshake& handshake);
+            static void ParseHandshakeF1(vector<unsigned char>& data, Handshake::Handshake& handshake);
+            static void ParseHandshakeF2(vector<unsigned char>& data, Handshake::Handshake& handshake);
             
             /**
              * Chunk parsing.
              **/
-            static void ParseChunkBasicHeader(vector<char>& data, Chunk& chunk);
-            static void ParseChunkMessageHeader(vector<char>& data, Chunk& chunk);
-            static void ParseChunkExtendedTimestamp(vector<char>& data, Chunk& chunk);
-            static void ParseChunkData(vector<char>& data, Chunk& chunk);
+            static void ParseChunkBasicHeader(vector<unsigned char>& data, Chunk& chunk);
+            static void ParseChunkMessageHeader(vector<unsigned char>& data, Chunk& chunk);
+            static void ParseChunkExtendedTimestamp(vector<unsigned char>& data, Chunk& chunk);
+            static void ParseChunkData(vector<unsigned char>& data, Chunk& chunk);
 
             /**
              * Command parsing.
@@ -49,7 +49,7 @@ namespace RTMP
             Parser() {};
 
         public:
-            static int ParseData(vector<char>& data, Session& session);
-            static int ParseChunk(vector<char>& data, Session& session);
+            static int ParseData(vector<unsigned char>& data, Session& session);
+            static int ParseChunk(vector<unsigned char>& data, Session& session);
     };
 }
