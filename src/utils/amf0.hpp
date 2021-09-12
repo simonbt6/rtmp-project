@@ -77,13 +77,13 @@ namespace Utils
             {
                 AMF0::Data data;
 
-                data.size = 5;
+                data.size = 9;
                 data.data = new unsigned char[data.size];
 
                 data.data[0] = AMF0::type_markers::number_marker;
 
                 int* numberData = Utils::Math::DoubleToIEEE754(value);
-                for (int i = 0; i < 8; i++)
+                for (int i = 0; i < data.size - 1; i++)
                     data.data[i + 1] = numberData[i];
 
                 return data;
@@ -178,7 +178,7 @@ namespace Utils
 
                 // Removes parasite data.
                 value = value.substr(0, length);
-                printf("\nActual String length: %i", value.length());
+                printf("\nActual String length: %i", (signed)value.length());
             }
 
             static void DecodeBoolean(unsigned char* bytes, int size, int& index, bool& value)
@@ -376,8 +376,8 @@ namespace Utils
                          * Optional user arguments.
                          **/
                         //DecodeObject(bytes, size, lastIndex, command.OptionalUserArguments);
-                        return cmd;  
                         printf("­\nBreak.");                      
+                        return cmd;  
                         break;
                     }
 
@@ -709,13 +709,13 @@ namespace Utils
                          * Publishing name.
                          **/
                         DecodeString(bytes, size, lastIndex, cmd->PublishingName);
-                        printf("\nPublishing name: %s", cmd->PublishingName);
+                        printf("\nPublishing name: %s", cmd->PublishingName.c_str());
 
                         /**
                          * Publishing type.
                          **/
                         DecodeString(bytes, size, lastIndex, cmd->PublishingType);
-                        printf("\nPublishing type: %s", cmd->PublishingType);
+                        printf("\nPublishing type: %s", cmd->PublishingType.c_str());
 
                         return cmd;
                         break;

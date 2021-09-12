@@ -44,7 +44,7 @@ namespace Utils
                 {
                     if (bits.at(i))
                         byte |= 1 << (i % 8);
-                    if ((i + 1) % 8 == 0)
+                    if ((i) % 7 == 0 && i != 0)
                     {
                         bytes.push_back(byte);
                         byte = 0;
@@ -90,12 +90,17 @@ namespace Utils
 
                 vector<int> bytes = BitsToBytes(bValue);
 
+                int* data = new int[8];
                 printf("\n\nIEEE754 bytes: ");
-                for (int v : bytes)
-                    printf("%X ", v);
+                for (int i = 0; i < 8; i++)
+                {
+                    data[i] = bytes.at(i);
+                    printf("%X ", bytes.at(i));
+                }
                 printf("\n\n");
                 
-                return bytes.data();
+                // TODO: Fix value 0 number.
+                return value ? new int[8]{0,0,0,0,0,0,0,0} : data;
             }
 
             static double IE754ToDouble(unsigned char* bytes)

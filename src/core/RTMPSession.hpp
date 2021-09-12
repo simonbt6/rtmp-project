@@ -9,6 +9,7 @@
 
 
 #include "RTMPHandshake.hpp"
+#include "RTMPChunk.hpp"
 
 #include <vector>
 #ifdef _WIN32
@@ -28,6 +29,12 @@ namespace RTMP
          * Handshake
          **/
         Handshake::Handshake handshake;
+
+        /** 
+         * Last chunk
+         **/
+        Chunk* lastChunk = nullptr;
+        vector<unsigned char> remainingBytes;
 
         /**
          * Handling

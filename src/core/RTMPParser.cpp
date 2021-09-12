@@ -78,14 +78,13 @@ namespace RTMP {
          *  - Done: 
          *      - F2 received.
          **/
-        // Utils::FormatedPrint::PrintBytes<unsigned char>(reinterpret_cast<unsigned char*>(data.data()), data.size());
+        Utils::FormatedPrint::PrintBytes<unsigned char>(data.data(), data.size());
         switch (handshake.state)
         {
             case Handshake::State::Uninitialized:
             {
                 printf("\nParsing C0 & C1...");
 
-                Utils::FormatedPrint::PrintBytes<unsigned char>(data.data(), data.size());
 
                 // Parse C0 & C1.
                 Parser::ParseHandshakeF0(data, handshake);
@@ -113,6 +112,9 @@ namespace RTMP {
                 // Parse C2.
                 Parser::ParseHandshakeF2(data, handshake);
 
+                // Dont reply to C2.
+                status = -2;
+
                 printf("\nHandshake done.");
                 handshake.state = Handshake::State::Done;
                 break;
@@ -122,7 +124,7 @@ namespace RTMP {
             {
                 printf("\nHandshake done. Processing chunk.");
                 // Chunk parsing.
-                return ParseChunk(data, session);
+                return ParseChunks(data, session);
                 break;
             };
         };
@@ -146,6 +148,7 @@ namespace RTMP {
         // chunk stream id
         unsigned int csid = (unsigned) bZero & 0x3F;
         chunk.basicHeader.baseID = 2;
+
         // If the chunk stream id is of 0 or 1,
         // it's a 2 or 3 bytes header field.
         if (csid == 0) 
@@ -285,39 +288,54 @@ namespace RTMP {
 
     int Parser::ParseChunk(vector<unsigned char>& data, Session& session)
     {
-        Chunk chunk;
-        char* response = nullptr;
-        int status = 0;
+        int status = 0;     // Return value.
+
+        Chunk* chunk;
+        if (   session.lastChunk == nullptr 
+            || session.lastChunk->missingData == 0)
+        {
+            chunk = new Chunk();
+            session.lastChunk = chunk;
+        }
+        else
+            chunk = session.lastChunk;
+
 
         /**
          * Parse chunk.
          **/
-        ParseChunkBasicHeader(data, chunk);
-        ParseChunkMessageHeader(data, chunk);
-        ParseChunkExtendedTimestamp(data, chunk);
-        ParseChunkData(data, chunk);
+        ParseChunkBasicHeader(data, *chunk);
+        ParseChunkMessageHeader(data, *chunk);
+        ParseChunkExtendedTimestamp(data, *chunk);
+        ParseChunkData(data, *chunk);
+
+        int size = chunk->messageHeader.message_length - data.size();
+        chunk->missingData = size > 0 ? size : 0;
+        printf("\nMissing data: %i", chunk->missingData);
+
+        
 
         /** 
          * Determine message type.
          */
-        if (chunk.messageHeader.message_type_id == 0)
+        if (chunk->messageHeader.message_type_id == 0)
         {
             // Idk if this is possible.
             printf("\nMessage type ID of 0.");
         }
-        else if (6 >= chunk.messageHeader.message_type_id)
+        else if (6 >= chunk->messageHeader.message_type_id)
         {
             // Protocol control message.
-            switch (chunk.messageHeader.message_type_id)
+            switch (chunk->messageHeader.message_type_id)
             {
                 case ProtocolControlMessage::Type::SetChunkSize:
                 {
                     int chunksize = 0;
                     Utils::BitOperations::bytesToInteger(
                         chunksize, 
-                        chunk.data, 
+                        chunk->data, 
                         false, 
-                        chunk.messageHeader.message_length);
+                        chunk->messageHeader.message_length);
                     printf("\nProtocol control message: Set chunk size %i.", chunksize);
                     break;
                 };
@@ -326,9 +344,9 @@ namespace RTMP {
                     int csid = 0;
                     Utils::BitOperations::bytesToInteger(
                         csid,
-                        chunk.data,
+                        chunk->data,
                         false,
-                        chunk.messageHeader.message_length
+                        chunk->messageHeader.message_length
                     );
                     printf("\nProtocol control message: Abort. Stream ID: %i", csid);
                     break;
@@ -353,7 +371,7 @@ namespace RTMP {
         // Normal message.
         else
         {
-            switch (chunk.messageHeader.message_type_id)
+            switch (chunk->messageHeader.message_type_id)
             {
                 case Message::Type::AudioMessage:
                     printf("\n\nAudio message.");
@@ -368,8 +386,8 @@ namespace RTMP {
                 {
                     printf("\n\nAMF0 Command message.");
                     Netconnection::Command* command = Utils::AMF0Decoder::DecodeCommand(
-                        chunk.data, 
-                        chunk.messageHeader.message_length);
+                        chunk->data, 
+                        chunk->messageHeader.message_length);
                     status = Handler::HandleCommandMessage(command, session);
                     printf("\n");
                     break;
@@ -393,13 +411,74 @@ namespace RTMP {
         }
 
         #if __DEBUG
-        printf("\nMessage timestamp delta: %i", chunk.messageHeader.timestamp_delta);
-        printf("\nMessage type ID: %i", chunk.messageHeader.message_type_id);
-        printf("\nMessage length : %i", chunk.messageHeader.message_length);
-        if (chunk.basicHeader.fmt == ChunkHeader::MessageHeader::ChunkHeaderFormat::Type0)
-            printf("\nMessage stream ID: %i", chunk.messageHeader.message_stream_id);
+        printf("\nMessage timestamp delta: %i", chunk->messageHeader.timestamp_delta);
+        printf("\nMessage type ID: %i", chunk->messageHeader.message_type_id);
+        printf("\nMessage length : %i", chunk->messageHeader.message_length);
+        if (chunk->basicHeader.fmt == ChunkHeader::MessageHeader::ChunkHeaderFormat::Type0)
+            printf("\nMessage stream ID: %i", chunk->messageHeader.message_stream_id);
         #endif
         return status;
     }
 
+    int Parser::ParseChunks(vector<unsigned char>& data, Session& session)
+    {
+        int status = 0;
+
+        // Get remaining data from last buffer.
+        data.insert(data.begin(), session.remainingBytes.begin(), session.remainingBytes.end());
+        
+        int size = data.size();
+
+        int index = 0;
+
+        bool forceQuit = false;
+
+        while (index < size || forceQuit)
+        {
+            Chunk chunk;
+            session.lastChunk = &chunk;
+            vector<unsigned char> remainingChunkData(data.begin() + index, data.end());
+            Utils::FormatedPrint::PrintBytes<unsigned char>(remainingChunkData.data(), remainingChunkData.size());
+
+            ParseChunkBasicHeader(remainingChunkData, chunk);
+            ParseChunkMessageHeader(remainingChunkData, chunk);
+            ParseChunkExtendedTimestamp(remainingChunkData, chunk);
+
+            if (chunk.displacement + chunk.messageHeader.message_length > remainingChunkData.size()) 
+            {
+                session.lastChunk = &chunk;
+                session.remainingBytes.insert(
+                    session.remainingBytes.end(), 
+                    remainingChunkData.begin(), 
+                    remainingChunkData.end());
+                forceQuit = true;
+                break;
+            }
+
+            index = chunk.displacement;
+
+            /**
+             * Parse chunk body. 
+             */
+            vector<unsigned char> chunkData(
+                remainingChunkData.begin(), 
+                remainingChunkData.begin() + chunk.messageHeader.message_length);
+            ParseChunkData(chunkData, chunk);
+
+            #if __DEBUG
+            printf("\nMessage timestamp delta: %i", chunk.messageHeader.timestamp_delta);
+            printf("\nMessage type ID: %i", chunk.messageHeader.message_type_id);
+            printf("\nMessage length : %i", chunk.messageHeader.message_length);
+            if (chunk.basicHeader.fmt == ChunkHeader::MessageHeader::ChunkHeaderFormat::Type0)
+                printf("\nMessage stream ID: %i", chunk.messageHeader.message_stream_id);
+            #endif
+
+            index = chunk.displacement + chunk.messageHeader.message_length + 1;
+
+            status += Handler::HandleChunk(chunk, session);
+        }
+
+        return status;
+
+    }
 }
