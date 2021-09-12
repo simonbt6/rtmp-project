@@ -11,6 +11,7 @@
 #include "RTMPChunk.hpp"
 #include "RTMPSession.hpp"
 #include "RTMPHandshake.hpp"
+#include "RTMPMessage.hpp"
 
 #include "../utils/Bit.hpp"
 #include "../utils/amf0.hpp"
@@ -42,11 +43,14 @@ namespace RTMP
             static void HandleVideoMessage(unsigned char*, Session&);
             static void HandleAudioMessage(unsigned char*, Session&);
 
+            static int HandleChunk(Chunk& chunk, Session& session);
+
             /**
              * Send data.
              **/
             static int SendData(SOCKET socket, char* data, int length);
-            
+            static int SendChunk(char* data, int length, Session& session);
+
             static int SendCommandMessage(Netconnection::Command*, Session&);
             static int SendHandshake(Session&);
             static void SendVideoMessage(unsigned char*, Session&);

@@ -11,6 +11,7 @@
 #include "../src/core/RTMPSession.hpp"
 
 #include "../src/utils/FormatedPrint.hpp"
+#include "../src/utils/logs.hpp"
 
 
 #ifdef _WIN32
@@ -25,10 +26,16 @@
 #define DEFAULT_BUFLEN 4096
 #define DEFAULT_PORT "1935"
 
-void SignedToUnsignedVector(vector<char>& in, vector<unsigned char>& out, int length)
+#define STANDBY -2
+
+vector<unsigned char> SignedToUnsignedVector(vector<char>& in, int length)
 {
-    in.resize(length);
-    out.insert(out.end(), in.begin(), in.end());    
+    vector<unsigned char> out(length);
+    for (int i = 0; i < length; i++)
+        out.at(i) = in[i];
+    printf("\nOut vector size: %i [%i]", (signed)out.size(), length);
+    // in.resize(length);
+    return out;
 }
 
 int main(int argc, char** argv) {
@@ -120,21 +127,30 @@ int main(int argc, char** argv) {
     // Receive until the peer shuts down the connection
     RTMP::Session session;
     session.socket = ClientSocket;
+    int lastSize = 0;
     do {
+        int expectedlength = 0;
+        if (session.handshake.state == Handshake::State::Uninitialized)
+            expectedlength = 1537;
+        else if (session.handshake.state == Handshake::State::AcknowledgeSent)
+            expectedlength = 1536;
+        else if (session.lastChunk != nullptr && session.lastChunk->missingData)
+            expectedlength = session.lastChunk->missingData;
+        else expectedlength = DEFAULT_BUFLEN;
 
-        iResult = recv(ClientSocket, &recvBuffer[0], recvBuffer.size(), 0);
+        iResult = recv(ClientSocket, &recvBuffer[0], expectedlength, 0);
         if (iResult > 0) {
 
             printf("\n\n[Bytes received: %d]\n", iResult);
 
-            SignedToUnsignedVector(recvBuffer, recvData, iResult);
-
-            iSendResult = RTMP::Parser::ParseData(recvData, session);
+            vector<unsigned char> data = SignedToUnsignedVector(recvBuffer, iResult);
+            Utils::LOGS::Log(data.data(), data.size());
+            iSendResult = RTMP::Parser::ParseData(data, session);
             printf("\nSend status: %i", iSendResult);
 
-            if (!iSendResult) 
+            if (!iSendResult && iSendResult != STANDBY) 
             {
-                iSendResult = send( ClientSocket, &recvBuffer[0], recvBuffer.size(), 0);
+                iSendResult = send( ClientSocket, &recvBuffer[0], iResult, 0);
                 printf("\nMirrored data.");
             }
             

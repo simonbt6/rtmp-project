@@ -202,5 +202,7 @@ namespace RTMP
          **/
         unsigned char* data = nullptr;
 
+        int missingData = 0;
+
     };
 }
