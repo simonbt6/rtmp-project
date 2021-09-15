@@ -91,13 +91,13 @@ namespace Utils
                 vector<int> bytes = BitsToBytes(bValue);
 
                 int* data = new int[8];
-                printf("\n\nIEEE754 bytes: ");
+                /* printf("\n\n[Math::DoubleToIEEE754] IEEE754 bytes: ");
                 for (int i = 0; i < 8; i++)
                 {
                     data[i] = bytes.at(i);
                     printf("%X ", bytes.at(i));
                 }
-                printf("\n\n");
+                printf("\n\n"); */
                 
                 // TODO: Fix value 0 number.
                 return value ? new int[8]{0,0,0,0,0,0,0,0} : data;

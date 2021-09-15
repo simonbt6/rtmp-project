@@ -46,10 +46,7 @@ namespace RTMP
 
         int timestamps = 0;
 
-        int ChunkSize = 128;
-
         int Bandwidth = 4096;
-
 
         int totalBytes = 0;
 

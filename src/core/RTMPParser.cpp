@@ -4,7 +4,6 @@
  * 
  * Implementation RTMP packet parser.
  **/
-#define __DEBUG true
 
 #include "RTMPParser.hpp"
 #include "RTMPSession.hpp"
@@ -17,11 +16,17 @@ using namespace std;
 namespace RTMP {
 
     /**
+     * Handshake Parsing. 
+     */
+
+    /**
      * Version: 1 byte
      **/
     void Parser::ParseHandshakeF0(vector<unsigned char>& data, Handshake::Handshake& handshake)
     {
-        printf("\nParsing version.");
+        Utils::FormatedPrint::PrintFormated(
+            "Parser::ParseHandshakeF0", 
+            "Parsing F0.");
         handshake.C0.version = (unsigned short int) data.at(0);        
     }
 
@@ -32,7 +37,10 @@ namespace RTMP {
      **/
     void Parser::ParseHandshakeF1(vector<unsigned char>& data, Handshake::Handshake& handshake)
     {
-        printf("\nParsing F1.");
+        Utils::FormatedPrint::PrintFormated(
+            "Parser::ParseHandshakeF1", 
+            "Parsing F1.");
+
         // Time
         for (int i = 0; i < TIME_BYTES_COUNT + 1; i++)
             handshake.C1.time[i] = data.at(i + 1);
@@ -40,7 +48,6 @@ namespace RTMP {
         // Random bytes
         for (int i = 0; i < RANDOM_BYTES_COUNT; i++)
             handshake.C1.randomBytes[i] = data.at(i + 5);
-        //Utils::FormatedPrint::PrintBytes((int*)handshake.C1.randomBytes, RANDOM_BYTES_COUNT);
     }
 
     /**
@@ -50,7 +57,10 @@ namespace RTMP {
      **/
     void Parser::ParseHandshakeF2(vector<unsigned char>& data, Handshake::Handshake& handshake)
     {
-        printf("\nParsing F2.");
+        Utils::FormatedPrint::PrintFormated(
+            "Parser::ParseHandshakeF2", 
+            "Parsing F2.");
+
         for (int i = 0; i < TIME_BYTES_COUNT; i++) 
             handshake.C2.time[i] = data.at(i);
         for (int i = 0; i < TIME_BYTES_COUNT; i++)
@@ -83,26 +93,36 @@ namespace RTMP {
         {
             case Handshake::State::Uninitialized:
             {
-                printf("\nParsing C0 & C1...");
+                Utils::FormatedPrint::PrintFormated(
+                    "Parser::ParseData", 
+                    "Parsing C0 & C1.");
 
 
                 // Parse C0 & C1.
                 Parser::ParseHandshakeF0(data, handshake);
                 Parser::ParseHandshakeF1(data, handshake);
 
-                printf("\nRTMP Version: %i", handshake.C0.version);
+                Utils::FormatedPrint::PrintFormated(
+                    "Parser::ParseData", 
+                    "RTMP Version: " + to_string(handshake.C0.version) + ".");
 
                 // Send S0 & S1 & S2.
                 #ifdef LIVE
                 status = Handler::SendHandshake(session);
                 #endif
 
-                printf("\nVersion sent.");
+                Utils::FormatedPrint::PrintFormated(
+                    "Parser::ParseData", 
+                    "Version Sent.");
+
                 handshake.state = Handshake::State::VersionSent;
             };
             case Handshake::State::VersionSent:
             {
-                printf("\nAcknowledge sent.");
+                Utils::FormatedPrint::PrintFormated(
+                    "Parser::ParseData", 
+                    "Acknowledge sent.");
+
                 handshake.state = Handshake::State::AcknowledgeSent;
                 break;
             };
@@ -115,14 +135,20 @@ namespace RTMP {
                 // Dont reply to C2.
                 status = -2;
 
-                printf("\nHandshake done.");
+                Utils::FormatedPrint::PrintFormated(
+                    "Parser::ParseData", 
+                    "Handshake done.");
+
                 handshake.state = Handshake::State::Done;
                 break;
             };
 
             case Handshake::State::Done:
             {
-                printf("\nHandshake done. Processing chunk.");
+                Utils::FormatedPrint::PrintFormated(
+                    "Parser::ParseData", 
+                    "Handshake done. Processing chunk.");
+
                 // Chunk parsing.
                 return ParseChunks(data, session);
                 break;
@@ -143,7 +169,9 @@ namespace RTMP {
 
         // format
         unsigned int fmt = (unsigned) bZero >> 6;
-        printf("\nFormat value is: %i", fmt);
+        Utils::FormatedPrint::PrintFormated(
+            "Parser::ParseChunkBasicHeader", 
+            "Format value is: " + to_string(fmt) + ".");
 
         // chunk stream id
         unsigned int csid = (unsigned) bZero & 0x3F;
@@ -156,7 +184,9 @@ namespace RTMP {
         else if (csid == 1) 
             csid = ((data.at(2))*256 + (data.at(1) + 64));
 
-        printf("\nChunk stream id: %i", csid);
+        Utils::FormatedPrint::PrintFormated(
+            "Parser::ParseChunkBasicHeader", 
+            "Chunk stream ID: " + to_string(csid) + ".");
 
         // Assignations
         chunk.basicHeader.csid = csid;
@@ -245,12 +275,16 @@ namespace RTMP {
 
             case ChunkHeader::MessageHeader::ChunkHeaderFormat::Type3:
                 // No message header.
-                printf("\nType3 header format: No message header.");
+                Utils::FormatedPrint::PrintFormated(
+                    "Parser::ParseChunkMessageHeader", 
+                    "Type3 header format: No message header.");
                 break;
 
             default:
                 // Error
-                printf("\nError: No message header type matching.");
+                Utils::FormatedPrint::PrintFormated(
+                    "Parser::ParseChunkMessageHeader", 
+                    "Error: No message header type matching.");
                 break;
         };
     }
@@ -269,16 +303,19 @@ namespace RTMP {
             false,
             4); 
 
-        printf("\nExtended Timestamp: %i", chunk.extendedTimestamp);
+        Utils::FormatedPrint::PrintFormated(
+            "Parser::ParseChunkExtendedTimestamp", 
+            "Extended Timestamp: " + to_string(chunk.extendedTimestamp) + ".");
+
         chunk.displacement += 4;
     }
 
     void Parser::ParseChunkData(vector<unsigned char>& data, Chunk& chunk) 
     {
         int size = data.size();
-
-        printf("\nPayload size byte : %i", size);
-        printf("\n[Chunk size]: %i", size);
+        Utils::FormatedPrint::PrintFormated(
+            "Parser::ParseChunkData", 
+            "Payload/chunk size: " + to_string(size) + ".");
 
         unsigned char* bData = new unsigned char[size];
         for (int i = 0; i < size; i++)
@@ -312,9 +349,9 @@ namespace RTMP {
 
         int size = chunk->messageHeader.message_length - data.size();
         chunk->missingData = size > 0 ? size : 0;
-        printf("\nMissing data: %i", chunk->missingData);
-
-        
+        Utils::FormatedPrint::PrintFormated(
+            "Parser::ParseChunk", 
+            "Missing data: " + to_string(chunk->missingData) + ".");        
 
         /** 
          * Determine message type.
@@ -322,7 +359,9 @@ namespace RTMP {
         if (chunk->messageHeader.message_type_id == 0)
         {
             // Idk if this is possible.
-            printf("\nMessage type ID of 0.");
+            Utils::FormatedPrint::PrintFormated(
+                "Parser::ParseChunk", 
+                "Message type ID of 0.");
         }
         else if (6 >= chunk->messageHeader.message_type_id)
         {
@@ -337,7 +376,9 @@ namespace RTMP {
                         chunk->data, 
                         false, 
                         chunk->messageHeader.message_length);
-                    printf("\nProtocol control message: Set chunk size %i.", chunksize);
+                    Utils::FormatedPrint::PrintFormated(
+                        "Parser::ParseChunk", 
+                        "Protocol control message: set chunk size " + to_string(chunksize) + ".");
                     break;
                 };
                 case ProtocolControlMessage::Type::Abort:
@@ -349,22 +390,31 @@ namespace RTMP {
                         false,
                         chunk->messageHeader.message_length
                     );
-                    printf("\nProtocol control message: Abort. Stream ID: %i", csid);
+
+                    Utils::FormatedPrint::PrintFormated(
+                        "Parser::ParseChunk", 
+                        "Protocol control message: Abort. Stream ID: " + to_string(csid) + ".");
                     break;
                 };
                 case ProtocolControlMessage::Type::Acknowledgement:
                 {
-                    printf("\nProtocol control message: Acknowledgement.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Parser::ParseChunk", 
+                        "Protocol control message: Acknowledgement.");
                     break;
                 };
                 case ProtocolControlMessage::Type::WindowAcknowledgementSize:
                 {
-                    printf("\nProtocol control message: Window Acknowledgement size.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Parser::ParseChunk", 
+                        "Protocol control message: Window Acknowledgement Size.");
                     break;
                 }
                 case ProtocolControlMessage::Type::SetPeerBandwidth:
                 {
-                    printf("\nProtocol control message: Set peer Bandwidth.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Parser::ParseChunk", 
+                        "Protocol control message: Set Peer Bandwith.");
                     break;
                 }
             };
@@ -375,17 +425,25 @@ namespace RTMP {
             switch (chunk->messageHeader.message_type_id)
             {
                 case Message::Type::AudioMessage:
-                    printf("\n\nAudio message.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Parser::ParseChunk", 
+                        "Audio message.");
                     break;
                 case Message::Type::VideoMessage:
-                    printf("\n\nVideo message.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Parser::ParseChunk", 
+                        "Video message.");
                     break;
                 case Message::Type::AggregateMessage:
-                    printf("\n\nAggregate message.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Parser::ParseChunk", 
+                        "Aggregate message.");
                     break;
                 case Message::Type::AMF0CommandMessage:
                 {
-                    printf("\n\nAMF0 Command message.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Parser::ParseChunk", 
+                        "AMF0 Command message.");
                     Netconnection::Command* command = Utils::AMF0Decoder::DecodeCommand(
                         chunk->data, 
                         chunk->messageHeader.message_length);
@@ -394,19 +452,29 @@ namespace RTMP {
                     break;
                 }
                 case Message::Type::AMF3CommandMessage:
-                    printf("\n\nAMF3 Command message.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Parser::ParseChunk", 
+                        "AMF3 Command message.");
                     break;
                 case Message::Type::AMF0DataMessage:
-                    printf("\n\nAMF0 Data message.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Parser::ParseChunk", 
+                        "AMF0 Data message.");
                     break;
                 case Message::Type::AMF3DataMessage:
-                    printf("\n\nAMF3 Data message.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Parser::ParseChunk", 
+                        "AMF3 Data message.");
                     break;
                 case Message::Type::AMF0SharedObjectMessage:
-                    printf("\n\nAMF0 Shared object message.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Parser::ParseChunk", 
+                        "AMF0 Shared object message.");
                     break;
                 case Message::Type::AMF3SharedObjectMessage:
-                    printf("\n\nAMF3 Shared object message.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Parser::ParseChunk", 
+                        "AMF3 Shared object message.");
                     break;
             }
         }
@@ -466,6 +534,9 @@ namespace RTMP {
                 remainingChunkData.begin() + chunk.messageHeader.message_length);
             ParseChunkData(chunkData, chunk);
 
+            Utils::FormatedPrint::PrintFormated(
+                        "Parser::ParseChunks", 
+                        "Message header:");
             #if __DEBUG
             printf("\nMessage timestamp delta: %i", chunk.messageHeader.timestamp_delta);
             printf("\nMessage type ID: %i", chunk.messageHeader.message_type_id);

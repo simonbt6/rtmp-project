@@ -15,11 +15,15 @@ namespace RTMP
     {
         // Only supports win32 for now.
         #ifdef _WIN32
-        printf("\nSending %i bytes.", length);
-        //Utils::FormatedPrint::PrintBytes<char>(data, length);
+        Utils::FormatedPrint::PrintFormated(
+            "Handler::SendData", 
+            "Sending " + to_string(length) + " bytes.");
+
         return send(socket, data, length, 0);
         #else
-        printf("\n\nTCP NOT IMPLEMENTED ON THIS PLATFORM.");
+        Utils::FormatedPrint::PrintError(
+            "Handler::SendData", 
+            "TCP NOT IMPLEMENTED ON THIS CPU ARCHITECTURE.");
         #endif
         return 0;
     }
@@ -62,7 +66,10 @@ namespace RTMP
             basicHeader[2] = (chunk.basicHeader.csid - 0xFF) / 256;
         }
         else
-            printf("\nError, chunk stream id too big. %i", chunk.basicHeader.csid);
+            Utils::FormatedPrint::PrintError(
+                "Handler::ConvertChunkToBytes", 
+                "Error, chunk stream id too big. " + to_string(length) + ".");
+
         data.insert(data.end(), basicHeader, basicHeader + basicHeaderLength);
 
         /**
@@ -145,7 +152,10 @@ namespace RTMP
 
     int Handler::SendChunk(char* data, int length, Session& session, int message_type)
     {
-        printf("\n[SendChunk] Sending %i bytes.", length);
+        Utils::FormatedPrint::PrintFormated(
+            "Handler::SendChunk", 
+            "Sending " + to_string(length) + " bytes.");
+
         Chunk* _chunk = session.lastChunk;
         
         // Chunk to send.
@@ -177,11 +187,6 @@ namespace RTMP
         chunk.data = reinterpret_cast<unsigned char*>(data);
 
         vector<char> chunkData = ConvertChunkToBytes(chunk, data, length);
-        printf("\n");
-        for (char c : chunkData)
-            printf("\n%X", c);
-        printf("\n");
-
         return SendData(session.socket, chunkData.data(), chunk.displacement);
     }
 
@@ -196,7 +201,9 @@ namespace RTMP
 
         if (Netconnection::Connect* cmd = dynamic_cast<Netconnection::Connect*>(command))
         {
-                printf("\n\nConnect command response.");               
+            Utils::FormatedPrint::PrintFormated(
+                "Handler::HandleCommandMessage", 
+                "Connect command response.");          
 
                 /**
                  * Send response.
@@ -286,7 +293,9 @@ namespace RTMP
         }
         else 
         {
-            printf("\nUnknown command type.");
+            Utils::FormatedPrint::PrintError(
+                "Handler::HandleCommandMessage", 
+                "Unknown command type.");
         }
         return 0;
     }
@@ -310,7 +319,15 @@ namespace RTMP
         if (chunk.messageHeader.message_type_id == 0)
         {
             // Idk if this is possible.
-            printf("\nMessage type ID of 0.");
+            Utils::FormatedPrint::PrintFormated(
+                "Handler::HandleChunk", 
+                "Message type ID of 0.");
+        }
+        else if (chunk.messageHeader.message_type_id == 4)
+        {
+            Utils::FormatedPrint::PrintFormated(
+                "Handler::HandleChunk", 
+                "User control message.");
         }
         else if (6 >= chunk.messageHeader.message_type_id)
         {
@@ -325,9 +342,15 @@ namespace RTMP
                         chunk.data, 
                         false, 
                         chunk.messageHeader.message_length);
-                    printf("\nProtocol control message: Set chunk size %i.", chunksize);
-                    vector<char> data = ProtocolControlMessage::vSetChunkSize(chunksize);
-                    SendChunk(data.data(), data.size(), session, ProtocolControlMessage::SetChunkSize);
+                    Utils::FormatedPrint::PrintFormated(
+                        "Handler::HandleChunk", 
+                        "Protocol control message: Set chunk size" + to_string(chunksize) + ".");
+
+                    session.Bandwidth = chunksize;
+
+                    Utils::FormatedPrint::PrintFormated(
+                        "Handler::HandleChunk", 
+                        "Set bandwidth to " + to_string(session.Bandwidth) + " for socket " + to_string((int)session.socket) + ".");
                     break;
                 };
                 case ProtocolControlMessage::Type::Abort:
@@ -339,7 +362,9 @@ namespace RTMP
                         false,
                         chunk.messageHeader.message_length
                     );
-                    printf("\nProtocol control message: Abort. Stream ID: %i", csid);
+                    Utils::FormatedPrint::PrintFormated(
+                        "Handler::HandleChunk", 
+                        "Protocol control message: Abort. Stream ID: " + to_string(csid) + ".");
                     vector<char> data = ProtocolControlMessage::vAbort(csid);
                     SendChunk(data.data(), data.size(), session, ProtocolControlMessage::Abort);
                     break;
@@ -347,13 +372,18 @@ namespace RTMP
                 case ProtocolControlMessage::Type::Acknowledgement:
                 {
                     int receivedData = session.totalBytes;
-                    printf("\nProtocol control message: Acknowledgement.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Handler::HandleChunk", 
+                        "Protocol control message: Acknowledgement.");
                     break;
                 };
                 case ProtocolControlMessage::Type::WindowAcknowledgementSize:
                 {
                     int WindowAcknowledgementSize = session.Bandwidth;
-                    printf("\nProtocol control message: Window Acknowledgement size.");
+
+                    Utils::FormatedPrint::PrintFormated(
+                        "Handler::HandleChunk", 
+                        "Protocol control message: Window Acknowledgement size.");
 
                     status = Handler::HandleCommandMessage(session.pendingCommand, session);
                     break;
@@ -361,7 +391,11 @@ namespace RTMP
                 case ProtocolControlMessage::Type::SetPeerBandwidth:
                 {
                     int bandwith = session.Bandwidth;
-                    printf("\nProtocol control message: Set peer Bandwidth.");
+
+                    Utils::FormatedPrint::PrintFormated(
+                        "Handler::HandleChunk", 
+                        "Protocol control message: Set peer Bandwidth.");
+
                     vector<char> data = ProtocolControlMessage::vSetPeerBandwidth(bandwith, ProtocolControlMessage::PeerBandwithLimitType::Hard);
                     SendChunk(data.data(), data.size(), session, ProtocolControlMessage::SetPeerBandwidth);
                     break;
@@ -374,41 +408,65 @@ namespace RTMP
             switch (chunk.messageHeader.message_type_id)
             {
                 case Message::Type::AudioMessage:
-                    printf("\n\nAudio message.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Handler::HandleChunk", 
+                        "Audio message.");
                     break;
                 case Message::Type::VideoMessage:
-                    printf("\n\nVideo message.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Handler::HandleChunk", 
+                        "Video message.");
                     break;
                 case Message::Type::AggregateMessage:
-                    printf("\n\nAggregate message.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Handler::HandleChunk", 
+                        "Aggregate message.");
                     break;
                 case Message::Type::AMF0CommandMessage:
                 {
-                    printf("\n\nAMF0 Command message.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Handler::HandleChunk", 
+                        "AMF0 Command message.");
                     Netconnection::Command* command = Utils::AMF0Decoder::DecodeCommand(
                         chunk.data, 
                         chunk.messageHeader.message_length);
                     session.pendingCommand = command;
-                    // Send window Acknowledgement size
-                    vector<char> data = ProtocolControlMessage::vSetWindowAcknowledgementSize(session.Bandwidth);
-                    status = SendChunk(data.data(), data.size(), session, ProtocolControlMessage::WindowAcknowledgementSize);
+                    
+                    // Send window Acknowledgement size & set peer bandwith protocol control message.
+                    vector<char> windowAckSizeData = ProtocolControlMessage::vSetWindowAcknowledgementSize(session.Bandwidth);
+                    vector<char> setPeerBandwidth = ProtocolControlMessage::vSetPeerBandwidth(session.Bandwidth, ProtocolControlMessage::PeerBandwithLimitType::Hard);
+                    status += SendChunk(windowAckSizeData.data(), windowAckSizeData.size(), session, ProtocolControlMessage::WindowAcknowledgementSize);
+                    status += SendChunk(setPeerBandwidth.data(), setPeerBandwidth.size(), session, ProtocolControlMessage::SetPeerBandwidth);
+                    
+                    status += HandleCommandMessage(command, session);
+
                     printf("\n");
                     break;
                 }
                 case Message::Type::AMF3CommandMessage:
-                    printf("\n\nAMF3 Command message.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Handler::HandleChunk", 
+                        "AMF3 Command message.");
                     break;
                 case Message::Type::AMF0DataMessage:
-                    printf("\n\nAMF0 Data message.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Handler::HandleChunk", 
+                        "AMF0 Data message.");
                     break;
                 case Message::Type::AMF3DataMessage:
-                    printf("\n\nAMF3 Data message.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Handler::HandleChunk", 
+                        "AMF3 Data message.");
                     break;
                 case Message::Type::AMF0SharedObjectMessage:
-                    printf("\n\nAMF0 Shared object message.");
+                    Utils::FormatedPrint::PrintFormated(
+                        "Handler::HandleChunk", 
+                        "AMF0 Shared object message.");
                     break;
                 case Message::Type::AMF3SharedObjectMessage:
-                    printf("\n\nAMF3 Shared object message.");
+                Utils::FormatedPrint::PrintFormated(
+                        "Handler::HandleChunk", 
+                        "AMF3 Shared object message.");
                     break;
             }
         }
@@ -476,7 +534,9 @@ namespace RTMP
 
             case Handshake::State::Done:
             {
-                printf("\nHandshake is done. No data to send.");
+                Utils::FormatedPrint::PrintFormated(
+                        "Handler::SendHandshake", 
+                        "Handshake is done. No data to send.");
                 return 0;
                 break;
             };

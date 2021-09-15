@@ -140,7 +140,9 @@ namespace Utils
                     Property* property = p.second;
                     if (property == NULL) 
                     {
-                        printf("\nError, cannot cast field type.");
+                        Utils::FormatedPrint::PrintFormated(
+                            "AMF0Encoder::EncodeObject", 
+                            "Error, cannot cast field type.");
                         break;
                     }
                     switch (property->type)
@@ -173,7 +175,9 @@ namespace Utils
                             AMF0::Data fieldData = EncodeString(fieldValue);
                             vData.insert(vData.end(), fieldData.data, fieldData.data + fieldData.size);
 
-                            printf("\nField value: %s", fieldValue.c_str());
+                            Utils::FormatedPrint::PrintFormated(
+                                "AMF0Encoder::EncodeObject", 
+                                "Field value: " + fieldValue + ".");
 
                         };
                         case DataType::Object: 
@@ -223,23 +227,39 @@ namespace Utils
                 unsigned char* data = Get(bytes, length, index + 1);
                 index += 1 + length;
                 value = Utils::Math::IE754ToDouble(data);
-                printf("\nNumber value: %d", value);
+                Utils::FormatedPrint::PrintFormated(
+                    "AMF0Decoder::DecodeNumber", 
+                    "Number value: " + to_string(value) + ".");
             }
 
             static void DecodeString(unsigned char* bytes, int size, int& index, string& value)
             {
                 printf("\n");
-                if (size == 0) printf("\nError, data size is 0.");
+
+                if (size == 0) 
+                    Utils::FormatedPrint::PrintError(
+                        "AMF0Decoder::DecodeString", 
+                        "Error, data size is 0.");
+
                 int length = 0;
-                printf("\nIndex: %i", index);
-                printf("\nString length bytes: %X, %X", bytes[index + 1], bytes[index + 2]);
+
+                Utils::FormatedPrint::PrintFormated(
+                    "AMF0Decoder::DecodeString", 
+                    "Index: " + to_string(index) + ".");
+
+                Utils::FormatedPrint::PrintFormated(
+                    "AMF0Decoder::DecodeString", 
+                    "String length bytes: " + to_string(bytes[index + 1]) + ", " + to_string(bytes[index + 2]) + ".");
                 
                 BitOperations::bytesToInteger(
                     length, 
                     new unsigned char[2]{bytes[index + 1], bytes[index + 2]}, 
                     false, 
                     2);
-                printf("\nCalculated string length: %i", length);
+
+                Utils::FormatedPrint::PrintFormated(
+                    "AMF0Decoder::DecodeString", 
+                    "Calculated string length: " + to_string(length) + ".");
              
                 unsigned char* data = Get(bytes, length, index + 3);
                 index += length + 3;
@@ -247,7 +267,9 @@ namespace Utils
 
                 // Removes parasite data.
                 value = value.substr(0, length);
-                printf("\nActual String length: %i", (signed)value.length());
+                Utils::FormatedPrint::PrintFormated(
+                    "AMF0Decoder::DecodeString", 
+                    "Actual string length: " + to_string((signed)value.length()) + ".");
             }
 
             static void DecodeBoolean(unsigned char* bytes, int size, int& index, bool& value)
@@ -278,7 +300,9 @@ namespace Utils
                 }
                 catch(std::out_of_range& e)
                 {
-                    std::cerr << "\nOut of range error: " << e.what() << std::endl;
+                    Utils::FormatedPrint::PrintError(
+                        "AMF0Decoder::FindCommandType", 
+                        "Out of range error: " + string(e.what()) + ".");
                 }
 
                 return CommandType::Null;
@@ -328,21 +352,27 @@ namespace Utils
 
                         case AMF0::type_markers::reference_marker:
                         {
-                            printf("\nError, unsupported type marker. Reference marker.");
+                            Utils::FormatedPrint::PrintFormated(
+                                "AMF0Decoder::DecodeString", 
+                                "Error, unsupported type marker. Reference marker.");
                             return nullptr;
                             break;
                         }
                         
                         case AMF0::null_marker:
                         {
-                            printf("\nError, unsupported type marker. Null marker.");
+                            Utils::FormatedPrint::PrintFormated(
+                                "AMF0Decoder::DecodeString", 
+                                "Error, unsupported type marker. Null marker.");
                             index++;
                             return nullptr;
                             break;
                         }
 
                         default:
-                            printf("\nUnsupported AMF0 type. Type %i", lastMarker);
+                            Utils::FormatedPrint::PrintFormated(
+                                "AMF0Decoder::DecodeString", 
+                                "Error, unsupported type marker. Type " + to_string(lastMarker)+ ".");
                             index = size; // Kills the process.
                             return nullptr;
                             break;
@@ -370,7 +400,11 @@ namespace Utils
 
                     string key;
                     DecodeString(bytes, size, lastIndex, key);
-                    printf("\nKey string: %s", key.c_str());
+
+                    Utils::FormatedPrint::PrintFormated(
+                        "AMF0Decoder::DecodeObjectProperties", 
+                        "Key string: " + key + ".");
+
                     lastMarker = (AMF0::type_markers)bytes[lastIndex];
                     Property* property = DecodeField(bytes, size, lastIndex, lastMarker);
                     PropertyType propertyType = Netconnection::PropertyTypeLinker.at(key);
@@ -402,19 +436,25 @@ namespace Utils
                 lastIndex = FindIndex(bytes, size, AMF0::type_markers::string_marker);
                 string commandNameString;
                 DecodeString(bytes, size, lastIndex, commandNameString);
-                printf("\nCommand name: %s", commandNameString.c_str());
+                Utils::FormatedPrint::PrintFormated(
+                    "AMF0Decoder::DecodeCommand", 
+                    "Command name: " + commandNameString + ".");
 
                 /**
                  * Find command type.
                  **/
                 CommandType commandType = CommandType::Null;
                 commandType = Netconnection::CommandLinker[commandNameString];
-                printf("\nCommand type: %i\n", commandType);
+                Utils::FormatedPrint::PrintFormated(
+                    "AMF0Decoder::DecodeCommand", 
+                    "Command type: " + to_string(commandType) + ".");
 
                 /**
                  * Parse appropriate informations according to command type.
                  **/
-                printf("\nCommand body: ");
+                Utils::FormatedPrint::PrintFormated(
+                    "AMF0Decoder::DecodeCommand", 
+                    "Command body: ");
                 Utils::FormatedPrint::PrintBytes<unsigned char>(bytes, size);
                 switch (commandType)
                 {
@@ -431,7 +471,9 @@ namespace Utils
                          * Transaction ID.
                          **/
                         DecodeNumber<unsigned short>(bytes, size, lastIndex, cmd->TransactionID);
-                        printf("\nTransaction ID: %i", cmd->TransactionID);
+                        Utils::FormatedPrint::PrintFormated(
+                            "AMF0Decoder::DecodeCommand", 
+                            "Transaction ID: " + to_string(cmd->TransactionID) + ".");
 
                         /**
                          * Command object.
@@ -453,8 +495,7 @@ namespace Utils
                          * Optional user arguments.
                          **/
                         //cmd->OptionalUserArguments = DecodeObjectProperties(bytes, size, lastIndex, );
-                        
-                        printf("­\nBreak.");                      
+                                             
                         return cmd;  
                         break;
                     }
@@ -562,7 +603,9 @@ namespace Utils
                          * Transaction ID.
                          **/
                         DecodeNumber<unsigned short>(bytes, size, lastIndex, cmd->TransactionID);
-                        printf("\nTransaction ID: %i", cmd->TransactionID);
+                        Utils::FormatedPrint::PrintFormated(
+                            "AMF0Decoder::DecodeCommand", 
+                            "Transaction ID: " + to_string(cmd->TransactionID) + ".");
 
                         /**
                          * Command object.
@@ -776,7 +819,9 @@ namespace Utils
                          * Transaction ID.
                          **/
                         DecodeNumber<unsigned short>(bytes, size, lastIndex, cmd->TransactionID);
-                        printf("\nTransaction ID: %i", cmd->TransactionID);
+                        Utils::FormatedPrint::PrintFormated(
+                            "AMF0Decoder::DecodeCommand", 
+                            "Transaction ID: " + to_string(cmd->TransactionID) + ".");
 
                         /**
                          * Null object.
@@ -787,13 +832,17 @@ namespace Utils
                          * Publishing name.
                          **/
                         DecodeString(bytes, size, lastIndex, cmd->PublishingName);
-                        printf("\nPublishing name: %s", cmd->PublishingName.c_str());
+                        Utils::FormatedPrint::PrintFormated(
+                            "AMF0Decoder::DecodeCommand", 
+                            "Publishing name: " + cmd->PublishingName + ".");
 
                         /**
                          * Publishing type.
                          **/
                         DecodeString(bytes, size, lastIndex, cmd->PublishingType);
-                        printf("\nPublishing type: %s", cmd->PublishingType.c_str());
+                        Utils::FormatedPrint::PrintFormated(
+                            "AMF0Decoder::DecodeCommand", 
+                            "Publishing name: " + cmd->PublishingType + ".");
 
                         return cmd;
                         break;
@@ -852,7 +901,9 @@ namespace Utils
                     }
 
                     case CommandType::Null:
-                        printf("Error, null command type.");
+                        Utils::FormatedPrint::PrintFormated(
+                            "AMF0Decoder::DecodeCommand", 
+                            "Error, null command type.");
                         break;
                 };
                 return nullptr;
