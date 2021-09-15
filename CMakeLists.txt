@@ -14,6 +14,7 @@ endif()
 # Source files
 set(SOURCE 
     test/win32_server.cpp
+    src/core/RTMPMessage.cpp
     src/core/RTMPParser.cpp
     src/core/RTMPHandler.cpp
 )

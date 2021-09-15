@@ -49,7 +49,7 @@ namespace RTMP
              * Send data.
              **/
             static int SendData(SOCKET socket, char* data, int length);
-            static int SendChunk(char* data, int length, Session& session);
+            static int SendChunk(char* data, int length, Session& session, int message_type);
 
             static int SendCommandMessage(Netconnection::Command*, Session&);
             static int SendHandshake(Session&);

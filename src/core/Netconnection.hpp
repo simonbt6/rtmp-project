@@ -23,12 +23,20 @@ enum PropertyType
     videoCodecs,
     videoFunction,
     pageUrl,
-    objectEncoding
+    objectEncoding,
+    type
+};
+enum DataType
+{
+    Number,
+    Boolean,
+    String,
+    Object,
 };
 
 struct Property 
 {
-    PropertyType type;
+    DataType type;
     virtual ~Property() = default;
 };
 
@@ -62,9 +70,9 @@ class Netconnection
 {
     public:
         typedef map<PropertyType, Property*> Object;
-        static inline map<string, PropertyType> propertyTypeLinker = {
+        static inline map<std::string, PropertyType> PropertyTypeLinker = {
             {"app", PropertyType::app},
-            {"flashver", PropertyType::flashver},
+            {"flashVer", PropertyType::flashver},
             {"swtUrl", PropertyType::swtUrl},
             {"tcUrl", PropertyType::tcUrl},
             {"fpad", PropertyType::fpad},
@@ -73,9 +81,23 @@ class Netconnection
             {"videoFunction", PropertyType::videoFunction},
             {"pageUrl", PropertyType::pageUrl},
             {"objectEncoding", PropertyType::objectEncoding},
+            {"type", PropertyType::type},
+        };
+        static inline map<PropertyType, std::string> PropertyNameLinker = {
+            {PropertyType::app, "app"},
+            {PropertyType::flashver, "flashVer"},
+            {PropertyType::swtUrl, "swtUrl"},
+            {PropertyType::tcUrl, "tcUrl"},
+            {PropertyType::fpad, "fpad"},
+            {PropertyType::audioCodecs, "audioCodecs"},
+            {PropertyType::videoCodecs, "videoCodecs"},
+            {PropertyType::videoFunction, "videoFunction"},
+            {PropertyType::pageUrl, "pageUrl"},
+            {PropertyType::objectEncoding, "objectEncoding"},
+            {PropertyType::type, "type"}
         };
         
-        static inline map<string, CommandType> CommandLinker = {
+        static inline map<std::string, CommandType> CommandLinker = {
             {"connect", CommandType::Connect},
             {"connectResponse", CommandType::ConnectResponse},
             {"call", CommandType::Call},
@@ -105,7 +127,7 @@ class Netconnection
              * 
              * Name of the command.
              **/
-            string CommandName;
+            std::string CommandName;
             
             /**
              * Transaction ID
@@ -134,7 +156,7 @@ class Netconnection
              * 
              * Name of the command. Set to 'connect'.
              **/
-            string CommandName = "connect";
+            std::string CommandName = "connect";
 
             /**
              * Always set to 1.
@@ -159,7 +181,7 @@ class Netconnection
              * 
              * _result or _error; indicates whether the response is result or error.
              **/
-            string CommandName;
+            std::string CommandName;
 
             /**
              * Transaction ID
@@ -197,7 +219,7 @@ class Netconnection
              * 
              * Name of the remote procedure that is called.
              **/
-            string CommandName;
+            std::string CommandName;
             
             /**
              * Transaction ID
@@ -253,7 +275,7 @@ class Netconnection
             /**
              * Command Name
              **/   
-            string CommandName = "createStream";
+            std::string CommandName = "createStream";
 
             /**
              * Transaction ID
@@ -275,7 +297,7 @@ class Netconnection
              * 
              * _result or _error; indicates whether the response is result or error.
              **/
-            string CommandName;
+            std::string CommandName;
             
             /**
              * Stream ID
@@ -295,7 +317,7 @@ class Netconnection
             /**
              * Command Name
              **/
-            string CommandName;
+            std::string CommandName;
 
             /**
              * Transaction ID
@@ -325,7 +347,7 @@ class Netconnection
             /**
              * Command Name
              **/
-            string CommandName = "play";
+            std::string CommandName = "play";
 
             /**
              * Transaction ID
@@ -349,7 +371,7 @@ class Netconnection
              * To play H.264/AAC files, you must precede the stream name with mp4:
              * and specify the file extension. For example: "mp4:sample.m4v").
              **/
-            string StreamName;
+            std::string StreamName;
 
             /**
              * Start
@@ -388,7 +410,7 @@ class Netconnection
             /**
              * Command Name
              **/
-            string CommandName = "play2";
+            std::string CommandName = "play2";
 
             /**
              * Transaction ID
@@ -421,7 +443,7 @@ class Netconnection
             /**
              * Command Name
              **/
-            string commandName = "deleteStream";
+            std::string commandName = "deleteStream";
 
             /**
              * Transaction ID
@@ -444,7 +466,7 @@ class Netconnection
             /**
              * Command Name
              **/
-            string CommandName = "receiveAudio";
+            std::string CommandName = "receiveAudio";
 
             /**
              * Transaction ID
@@ -476,7 +498,7 @@ class Netconnection
             /**
              * Command Name
              **/
-            string CommandName = "receiveVideo";
+            std::string CommandName = "receiveVideo";
 
             /**
              * Transaction ID
@@ -508,7 +530,7 @@ class Netconnection
             /**
              * Command Name
              **/
-            string CommandName = "publish";
+            std::string CommandName = "publish";
 
             /**
              * Transaction ID is set to 0.
@@ -527,7 +549,7 @@ class Netconnection
              * 
              * Name with which the stream is published.
              **/
-            string PublishingName;
+            std::string PublishingName;
 
             /**
              * Publishing Type
@@ -543,7 +565,7 @@ class Netconnection
              * 
              * Live: Live data is published without recording it in a file.
              **/
-            string PublishingType;
+            std::string PublishingType;
         };  
 
         struct Seek : public Command
@@ -556,7 +578,7 @@ class Netconnection
             /**
              * Command Name
              **/
-            string CommandName = "seek"; 
+            std::string CommandName = "seek"; 
             
             /**
              * Transaction ID
@@ -590,7 +612,7 @@ class Netconnection
             /**
              * Command Name
              **/
-            string CommandName = "pause";
+            std::string CommandName = "pause";
             
             /**
              * Transaction ID

@@ -24,7 +24,7 @@ namespace RTMP
         return 0;
     }
 
-    char* ConvertChunkToBytes(Chunk& chunk)
+    vector<char> ConvertChunkToBytes(Chunk& chunk, char* body, int length)
     {
         vector<char> data;
 
@@ -35,7 +35,7 @@ namespace RTMP
         int basicHeaderLength = 1;
 
         // 2-63
-        if ((2 < chunk.basicHeader.csid) && (chunk.basicHeader.csid < 63))
+        if (chunk.basicHeader.csid < 63)
         {
             basicHeaderLength = 1;
             basicHeader = new char[basicHeaderLength];
@@ -75,26 +75,27 @@ namespace RTMP
                 char* timestamp = new char[3];
                 char* message_length = new char[3];
                 char* message_type_id = new char[1];
-                char* message_stream_id = new char[3];
+                char* message_stream_id = new char[4];
 
-                timestamp[0] = chunk.messageHeader.timestamp_delta >> 16;
-                timestamp[1] = (chunk.messageHeader.timestamp_delta >> 8) & 0xFF;
-                timestamp[3] = chunk.messageHeader.timestamp_delta & 0xFF;
+                timestamp[0] = (chunk.messageHeader.timestamp_delta >> 16);
+                timestamp[1] = ((chunk.messageHeader.timestamp_delta >> 8) & 0xFF);
+                timestamp[2] = (chunk.messageHeader.timestamp_delta & 0xFF);
  
-                message_length[0] = chunk.messageHeader.message_length >> 16;
-                message_length[1] = (chunk.messageHeader.message_length >> 8) & 0xFF;
-                message_length[3] = chunk.messageHeader.message_length & 0xFF;
+                message_length[0] = (chunk.messageHeader.message_length >> 16);
+                message_length[1] = ((chunk.messageHeader.message_length >> 8) & 0xFF);
+                message_length[2] = (chunk.messageHeader.message_length & 0xFF);
 
                 message_type_id[0] = chunk.messageHeader.message_type_id;
 
-                message_stream_id[0] = chunk.messageHeader.message_stream_id >> 16;
-                message_stream_id[1] = (chunk.messageHeader.message_stream_id >> 8) & 0xFF;
-                message_stream_id[3] = chunk.messageHeader.message_stream_id & 0xFF;
+                message_stream_id[0] = (chunk.messageHeader.message_stream_id >> 24);
+                message_stream_id[1] = (chunk.messageHeader.message_stream_id >> 16);
+                message_stream_id[2] = (chunk.messageHeader.message_stream_id >> 8) & 0xFF;
+                message_stream_id[3] = (chunk.messageHeader.message_stream_id & 0xFF);
 
                 data.insert(data.end(), timestamp, timestamp + 3);
                 data.insert(data.end(), message_length, message_length + 3);
                 data.insert(data.end(), message_type_id, message_type_id + 1);
-                data.insert(data.end(), message_stream_id, message_stream_id + 3);
+                data.insert(data.end(), message_stream_id, message_stream_id + 4);
                 break;
             };
             case ChunkHeader::MessageHeader::ChunkHeaderFormat::Type1:
@@ -136,33 +137,52 @@ namespace RTMP
             };
         }
 
+        data.insert(data.end(), body, body + length);
+
         chunk.displacement = data.size();
-        return data.data();
+        return data;
     }
 
-    int Handler::SendChunk(char* data, int length, Session& session)
+    int Handler::SendChunk(char* data, int length, Session& session, int message_type)
     {
+        printf("\n[SendChunk] Sending %i bytes.", length);
         Chunk* _chunk = session.lastChunk;
         
         // Chunk to send.
         Chunk chunk;
 
-        // Basic header.
-        chunk.basicHeader.fmt = 0;
-        chunk.basicHeader.csid = _chunk->basicHeader.csid;
+        if (message_type > 0 && message_type <= 6)
+        {
+            // Message control protocol
+            chunk.basicHeader.fmt = 0;
+            chunk.basicHeader.csid = 2;
+            chunk.messageHeader.message_type_id = message_type;
+            chunk.messageHeader.message_stream_id = 0;
+        }
+        else
+        {
+            // Other message.
+            chunk.basicHeader.fmt = _chunk->basicHeader.fmt;
+            chunk.basicHeader.csid = _chunk->basicHeader.csid;
+            chunk.messageHeader.message_type_id = _chunk->messageHeader.message_type_id;
+            chunk.messageHeader.message_stream_id = _chunk->messageHeader.message_stream_id;
+        }
+
 
         // Message header.
         chunk.messageHeader.message_length = length;
-        chunk.messageHeader.message_stream_id = _chunk->messageHeader.message_stream_id;
-        chunk.messageHeader.message_type_id = _chunk->messageHeader.message_type_id;
         chunk.messageHeader.timestamp_delta = _chunk->messageHeader.timestamp_delta;
 
         // Chunk payload.
         chunk.data = reinterpret_cast<unsigned char*>(data);
 
-        char* chunkData = ConvertChunkToBytes(chunk);
+        vector<char> chunkData = ConvertChunkToBytes(chunk, data, length);
+        printf("\n");
+        for (char c : chunkData)
+            printf("\n%X", c);
+        printf("\n");
 
-        return SendData(session.socket, chunkData, chunk.displacement);
+        return SendData(session.socket, chunkData.data(), chunk.displacement);
     }
 
     /**
@@ -171,6 +191,7 @@ namespace RTMP
 
     int Handler::HandleCommandMessage(Netconnection::Command* command, Session& session)
     {
+        int status = 0;
         if (command == nullptr) return -1;
 
         if (Netconnection::Connect* cmd = dynamic_cast<Netconnection::Connect*>(command))
@@ -194,11 +215,18 @@ namespace RTMP
                 Utils::AMF0::Data transactionIDData = 
                     Utils::AMF0Encoder::EncodeNumber(transactionID);
 
-                for (int i = 0; i < commandNameData.size; i++)
-                    data.push_back(commandNameData.data[i]);
-                for (int i = 0; i < transactionIDData.size; i++)
-                    data.push_back(transactionIDData.data[i]);
-                return SendChunk(data.data(), data.size(), session);
+                /**
+                 * Properties object.
+                 */
+                Utils::AMF0::Data propertiesData = 
+                    Utils::AMF0Encoder::EncodeObject(command->CommandObject);
+
+                data.insert(data.end(), commandNameData.data, commandNameData.data + commandNameData.size);
+                data.insert(data.end(), transactionIDData.data, transactionIDData.data + transactionIDData.size);
+                // data.insert(data.end(), propertiesData.data, propertiesData.data + propertiesData.size);
+
+
+                return SendChunk(data.data(), data.size(), session, 0x14);
         }
         else if (Netconnection::ConnectResponse* cmd = dynamic_cast<Netconnection::ConnectResponse*>(command))
         {
@@ -263,12 +291,12 @@ namespace RTMP
         return 0;
     }
 
-    void Handler::HandleVideoMessage(unsigned char*, Session& session)
+    void Handler::HandleVideoMessage(unsigned char* data, Session& session)
     {
 
     }
 
-    void Handler::HandleAudioMessage(unsigned char*, Session& session)
+    void Handler::HandleAudioMessage(unsigned char* data, Session& session)
     {
 
     }
@@ -298,6 +326,8 @@ namespace RTMP
                         false, 
                         chunk.messageHeader.message_length);
                     printf("\nProtocol control message: Set chunk size %i.", chunksize);
+                    vector<char> data = ProtocolControlMessage::vSetChunkSize(chunksize);
+                    SendChunk(data.data(), data.size(), session, ProtocolControlMessage::SetChunkSize);
                     break;
                 };
                 case ProtocolControlMessage::Type::Abort:
@@ -310,21 +340,30 @@ namespace RTMP
                         chunk.messageHeader.message_length
                     );
                     printf("\nProtocol control message: Abort. Stream ID: %i", csid);
+                    vector<char> data = ProtocolControlMessage::vAbort(csid);
+                    SendChunk(data.data(), data.size(), session, ProtocolControlMessage::Abort);
                     break;
                 };
                 case ProtocolControlMessage::Type::Acknowledgement:
                 {
+                    int receivedData = session.totalBytes;
                     printf("\nProtocol control message: Acknowledgement.");
                     break;
                 };
                 case ProtocolControlMessage::Type::WindowAcknowledgementSize:
                 {
+                    int WindowAcknowledgementSize = session.Bandwidth;
                     printf("\nProtocol control message: Window Acknowledgement size.");
+
+                    status = Handler::HandleCommandMessage(session.pendingCommand, session);
                     break;
                 }
                 case ProtocolControlMessage::Type::SetPeerBandwidth:
                 {
+                    int bandwith = session.Bandwidth;
                     printf("\nProtocol control message: Set peer Bandwidth.");
+                    vector<char> data = ProtocolControlMessage::vSetPeerBandwidth(bandwith, ProtocolControlMessage::PeerBandwithLimitType::Hard);
+                    SendChunk(data.data(), data.size(), session, ProtocolControlMessage::SetPeerBandwidth);
                     break;
                 }
             };
@@ -349,7 +388,10 @@ namespace RTMP
                     Netconnection::Command* command = Utils::AMF0Decoder::DecodeCommand(
                         chunk.data, 
                         chunk.messageHeader.message_length);
-                    status = Handler::HandleCommandMessage(command, session);
+                    session.pendingCommand = command;
+                    // Send window Acknowledgement size
+                    vector<char> data = ProtocolControlMessage::vSetWindowAcknowledgementSize(session.Bandwidth);
+                    status = SendChunk(data.data(), data.size(), session, ProtocolControlMessage::WindowAcknowledgementSize);
                     printf("\n");
                     break;
                 }

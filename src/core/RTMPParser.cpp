@@ -275,13 +275,14 @@ namespace RTMP {
 
     void Parser::ParseChunkData(vector<unsigned char>& data, Chunk& chunk) 
     {
-        int size = data.size() - chunk.displacement;
+        int size = data.size();
 
         printf("\nPayload size byte : %i", size);
+        printf("\n[Chunk size]: %i", size);
 
         unsigned char* bData = new unsigned char[size];
         for (int i = 0; i < size; i++)
-            bData[i] = (unsigned)data.at(i + chunk.displacement);
+            bData[i] = (unsigned)data.at(i);
         
         chunk.data = bData;
     }

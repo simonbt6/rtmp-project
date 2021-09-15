@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <iomanip>
 #include <string>
+#include <map>
 
 #include "Bit.hpp"
 #include "Math.hpp"
@@ -102,7 +103,7 @@ namespace Utils
                 return data;
             }
 
-            static AMF0::Data EncodeString(string value)
+            static AMF0::Data EncodeString(string& value)
             {
                 AMF0::Data data;
                 data.size = value.length() + 3;
@@ -119,9 +120,77 @@ namespace Utils
                 return data;
             }
 
-            static AMF0::Data EncodeObject(Netconnection::Object value)
+            static AMF0::Data EncodeObject(Netconnection::Object& value)
             {
                 AMF0::Data data;
+                vector<unsigned char> vData;
+
+                for (pair p : value)
+                {
+                    /**
+                     * Property Name Data.  
+                     */
+                    std::string propertyNameString = 
+                        Netconnection::PropertyNameLinker.at(p.first);
+                    vData.insert(vData.end(), propertyNameString.data(), propertyNameString.data() + propertyNameString.length());
+                    
+                    /**
+                     * Property Data.
+                     */
+                    Property* property = p.second;
+                    if (property == NULL) 
+                    {
+                        printf("\nError, cannot cast field type.");
+                        break;
+                    }
+                    switch (property->type)
+                    {
+                        case DataType::Number:
+                        {
+                            Field<double>* field = dynamic_cast<Field<double>*>(property);
+                            if (field == nullptr) break;
+                            double fieldValue = field->m_Value;
+                            
+                            AMF0::Data fieldData = EncodeNumber(fieldValue);
+                            vData.insert(vData.end(), fieldData.data, fieldData.data + fieldData.size);
+                        };
+                        case DataType::Boolean:
+                        {
+                            Field<bool>* field = dynamic_cast<Field<bool>*>(property);
+                            if (field == nullptr) break;
+                            bool fieldValue = field->m_Value;
+                            
+                            AMF0::Data fieldData = EncodeBoolean(fieldValue);
+                            vData.insert(vData.end(), fieldData.data, fieldData.data + fieldData.size);
+                        };
+                        case DataType::String:
+                        {
+                            Field<string>* field = dynamic_cast<Field<string>*>(property);
+                            if (field == nullptr) break;
+
+                            string fieldValue = field->m_Value;
+                            
+                            AMF0::Data fieldData = EncodeString(fieldValue);
+                            vData.insert(vData.end(), fieldData.data, fieldData.data + fieldData.size);
+
+                            printf("\nField value: %s", fieldValue.c_str());
+
+                        };
+                        case DataType::Object: 
+                        {
+                            Field<Netconnection::Object>* field = dynamic_cast<Field<Netconnection::Object>*>(property);
+                            if (field == nullptr) break;
+
+                            Netconnection::Object fieldValue = field->m_Value;
+
+                            AMF0::Data fieldData = EncodeObject(fieldValue);
+                            vData.insert(vData.end(), fieldData.data, fieldData.data + fieldData.size);
+                        };
+                    }                    
+                }
+
+                data.data = vData.data();
+                data.size = vData.size();
 
                 return data;
             }
@@ -188,6 +257,7 @@ namespace Utils
 
             static void DecodeObject(unsigned char* bytes, int size, int& index, Netconnection::Object& object)
             {
+                Utils::FormatedPrint::PrintBytes<unsigned char>(bytes, size);
                 unsigned char* data = Get(bytes, (size - index), index + 1);
                 int endIndex = FindIndex(data, (size - index + 1), AMF0::type_markers::object_end_marker);
                 int length = endIndex - index;
@@ -287,19 +357,23 @@ namespace Utils
                 int lastIndex = 0;
                 bool firstElement = false;
 
-                Netconnection::Object object;                
+                Netconnection::Object object;    
+
+                Utils::FormatedPrint::PrintBytes<unsigned char>(bytes, size);            
 
                 while (lastIndex < size -1)
                 {
+                    if (lastIndex > 0) lastIndex--;
                     
                     int length;
                     unsigned char* data;
 
                     string key;
                     DecodeString(bytes, size, lastIndex, key);
-                    lastMarker = (AMF0::type_markers)bytes[lastIndex + 1];
+                    printf("\nKey string: %s", key.c_str());
+                    lastMarker = (AMF0::type_markers)bytes[lastIndex];
                     Property* property = DecodeField(bytes, size, lastIndex, lastMarker);
-                    PropertyType propertyType = Netconnection::propertyTypeLinker[key];
+                    PropertyType propertyType = Netconnection::PropertyTypeLinker.at(key);
 
                     if (property != nullptr)
                         object.insert(pair<PropertyType, Property*> (propertyType, property));
@@ -341,6 +415,7 @@ namespace Utils
                  * Parse appropriate informations according to command type.
                  **/
                 printf("\nCommand body: ");
+                Utils::FormatedPrint::PrintBytes<unsigned char>(bytes, size);
                 switch (commandType)
                 {
                     case CommandType::Connect:
@@ -361,7 +436,9 @@ namespace Utils
                         /**
                          * Command object.
                          **/
-                        //DecodeObject(bytes, size, lastIndex, command.CommandObject);
+                        Utils::FormatedPrint::PrintBytes<unsigned char>(bytes, size);
+                        unsigned char* commandObjectData = Get(bytes, (size - lastIndex), lastIndex);
+                        cmd->CommandObject = DecodeObjectProperties(commandObjectData, (size - lastIndex));
                         
 
                         /**
@@ -375,7 +452,8 @@ namespace Utils
                         /**
                          * Optional user arguments.
                          **/
-                        //DecodeObject(bytes, size, lastIndex, command.OptionalUserArguments);
+                        //cmd->OptionalUserArguments = DecodeObjectProperties(bytes, size, lastIndex, );
+                        
                         printf("­\nBreak.");                      
                         return cmd;  
                         break;
