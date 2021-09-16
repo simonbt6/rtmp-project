@@ -16,6 +16,8 @@
 #include "Bit.hpp"
 #include "Math.hpp"
 #include "FormatedPrint.hpp"
+#include "Object.hpp"
+
 #include "../core/Netconnection.hpp"
 
 using namespace std;
@@ -120,7 +122,7 @@ namespace Utils
                 return data;
             }
 
-            static AMF0::Data EncodeObject(Netconnection::Object& value)
+            static AMF0::Data EncodeObject(Object& value)
             {
                 AMF0::Data data;
                 vector<unsigned char> vData;
@@ -131,7 +133,7 @@ namespace Utils
                      * Property Name Data.  
                      */
                     std::string propertyNameString = 
-                        Netconnection::PropertyNameLinker.at(p.first);
+                        PropertyNameLinker.at(p.first);
                     vData.insert(vData.end(), propertyNameString.data(), propertyNameString.data() + propertyNameString.length());
                     
                     /**
@@ -151,7 +153,7 @@ namespace Utils
                         {
                             Field<double>* field = dynamic_cast<Field<double>*>(property);
                             if (field == nullptr) break;
-                            double fieldValue = field->m_Value;
+                            double fieldValue = field->value;
                             
                             AMF0::Data fieldData = EncodeNumber(fieldValue);
                             vData.insert(vData.end(), fieldData.data, fieldData.data + fieldData.size);
@@ -160,7 +162,7 @@ namespace Utils
                         {
                             Field<bool>* field = dynamic_cast<Field<bool>*>(property);
                             if (field == nullptr) break;
-                            bool fieldValue = field->m_Value;
+                            bool fieldValue = field->value;
                             
                             AMF0::Data fieldData = EncodeBoolean(fieldValue);
                             vData.insert(vData.end(), fieldData.data, fieldData.data + fieldData.size);
@@ -170,7 +172,7 @@ namespace Utils
                             Field<string>* field = dynamic_cast<Field<string>*>(property);
                             if (field == nullptr) break;
 
-                            string fieldValue = field->m_Value;
+                            string fieldValue = field->value;
                             
                             AMF0::Data fieldData = EncodeString(fieldValue);
                             vData.insert(vData.end(), fieldData.data, fieldData.data + fieldData.size);
@@ -182,10 +184,10 @@ namespace Utils
                         };
                         case DataType::Object: 
                         {
-                            Field<Netconnection::Object>* field = dynamic_cast<Field<Netconnection::Object>*>(property);
+                            Field<Object>* field = dynamic_cast<Field<Object>*>(property);
                             if (field == nullptr) break;
 
-                            Netconnection::Object fieldValue = field->m_Value;
+                            Object fieldValue = field->value;
 
                             AMF0::Data fieldData = EncodeObject(fieldValue);
                             vData.insert(vData.end(), fieldData.data, fieldData.data + fieldData.size);
@@ -270,6 +272,10 @@ namespace Utils
                 Utils::FormatedPrint::PrintFormated(
                     "AMF0Decoder::DecodeString", 
                     "Actual string length: " + to_string((signed)value.length()) + ".");
+                Utils::FormatedPrint::PrintFormated(
+                    "AMF0Decoder::DecodeString",
+                    "String value: " + value
+                );
             }
 
             static void DecodeBoolean(unsigned char* bytes, int size, int& index, bool& value)
@@ -277,7 +283,7 @@ namespace Utils
                 
             }
 
-            static void DecodeObject(unsigned char* bytes, int size, int& index, Netconnection::Object& object)
+            static void DecodeObject(unsigned char* bytes, int size, int& index, Object& object)
             {
                 Utils::FormatedPrint::PrintBytes<unsigned char>(bytes, size);
                 unsigned char* data = Get(bytes, (size - index), index + 1);
@@ -292,7 +298,7 @@ namespace Utils
                 // TODO: Implement long string (> 65535 bytes) decoding.
             }
 
-            static CommandType FindCommandType(string commandName)
+            static Netconnection::CommandType FindCommandType(string commandName)
             {
                 try
                 {
@@ -305,7 +311,7 @@ namespace Utils
                         "Out of range error: " + string(e.what()) + ".");
                 }
 
-                return CommandType::Null;
+                return Netconnection::CommandType::Null;
             }
 
             static Property* DecodeField(unsigned char* bytes, int size, int& index, AMF0::type_markers lastMarker)
@@ -317,7 +323,7 @@ namespace Utils
                         {
                             Field<int>* field = new Field<int>();
                             
-                            DecodeNumber(bytes, size, index, field->m_Value);
+                            DecodeNumber(bytes, size, index, field->value);
 
                             return field;
                             break;
@@ -326,7 +332,7 @@ namespace Utils
                         case AMF0::type_markers::boolean_marker:
                         {
                             Field<bool>* field = new Field<bool>();
-                            DecodeBoolean(bytes, size, index, field->m_Value);
+                            DecodeBoolean(bytes, size, index, field->value);
 
                             return field;
                             break;
@@ -335,7 +341,7 @@ namespace Utils
                         case AMF0::type_markers::string_marker:
                         {
                             Field<string>* field = new Field<string>();
-                            DecodeString(bytes, size, index, field->m_Value);
+                            DecodeString(bytes, size, index, field->value);
 
                             return field;
                             break;
@@ -343,8 +349,9 @@ namespace Utils
 
                         case AMF0::type_markers::object_marker:
                         {
-                            Field<Netconnection::Object>* field = new Field<Netconnection::Object>();
-                            DecodeObject(bytes, size, index, field->m_Value);
+                            Field<Object>* field = new Field<Object>();
+                            DecodeObject(bytes, size, index, field->value);
+                            FormatedPrint::PrintObject(field->value);
 
                             return field;
                             break;
@@ -381,13 +388,13 @@ namespace Utils
             }
 
 
-            static Netconnection::Object DecodeObjectProperties(unsigned char* bytes, int size)
+            static Object DecodeObjectProperties(unsigned char* bytes, int size)
             {
                 AMF0::type_markers lastMarker = (AMF0::type_markers)-1;
                 int lastIndex = 0;
                 bool firstElement = false;
 
-                Netconnection::Object object;    
+                Object object;    
 
                 Utils::FormatedPrint::PrintBytes<unsigned char>(bytes, size);            
 
@@ -407,7 +414,7 @@ namespace Utils
 
                     lastMarker = (AMF0::type_markers)bytes[lastIndex];
                     Property* property = DecodeField(bytes, size, lastIndex, lastMarker);
-                    PropertyType propertyType = Netconnection::PropertyTypeLinker.at(key);
+                    PropertyType propertyType = PropertyTypeLinker.at(key);
 
                     if (property != nullptr)
                         object.insert(pair<PropertyType, Property*> (propertyType, property));
@@ -443,11 +450,11 @@ namespace Utils
                 /**
                  * Find command type.
                  **/
-                CommandType commandType = CommandType::Null;
+                Netconnection::CommandType commandType = Netconnection::CommandType::Null;
                 commandType = Netconnection::CommandLinker[commandNameString];
                 Utils::FormatedPrint::PrintFormated(
                     "AMF0Decoder::DecodeCommand", 
-                    "Command type: " + to_string(commandType) + ".");
+                    "Command type: " + to_string((int)commandType) + ".");
 
                 /**
                  * Parse appropriate informations according to command type.
@@ -458,7 +465,7 @@ namespace Utils
                 Utils::FormatedPrint::PrintBytes<unsigned char>(bytes, size);
                 switch (commandType)
                 {
-                    case CommandType::Connect:
+                    case Netconnection::CommandType::Connect:
                     {
                         Netconnection::Connect* cmd = new Netconnection::Connect();
                         /**
@@ -500,7 +507,7 @@ namespace Utils
                         break;
                     }
 
-                    case CommandType::ConnectResponse:
+                    case Netconnection::CommandType::ConnectResponse:
                     {
                         Netconnection::ConnectResponse* cmd = new Netconnection::ConnectResponse();
                         /**
@@ -528,7 +535,7 @@ namespace Utils
                         break;
                     }
 
-                    case CommandType::Call:
+                    case Netconnection::CommandType::Call:
                     {
                         Netconnection::Call* cmd = new Netconnection::Call();
                         /**
@@ -562,7 +569,7 @@ namespace Utils
                         break;
                     }
 
-                    case CommandType::CallResponse:
+                    case Netconnection::CommandType::CallResponse:
                     {
                         Netconnection::CallResponse* cmd = new Netconnection::CallResponse();
                         /**
@@ -591,7 +598,7 @@ namespace Utils
                         break;
                     }    
                     
-                    case CommandType::CreateStream:
+                    case Netconnection::CommandType::CreateStream:
                     {
                         Netconnection::CreateStream* cmd = new Netconnection::CreateStream();
                         /**
@@ -621,7 +628,7 @@ namespace Utils
                         break;
                     }
 
-                    case CommandType::CreateStreamResponse:
+                    case Netconnection::CommandType::CreateStreamResponse:
                     {
                         Netconnection::CreateStreamResponse* cmd = new Netconnection::CreateStreamResponse();
                         /**
@@ -650,7 +657,7 @@ namespace Utils
                         break;
                     }
 
-                    case CommandType::OnStatus:
+                    case Netconnection::CommandType::OnStatus:
                     {
                         Netconnection::OnStatus* cmd = new Netconnection::OnStatus();
                         /**
@@ -673,7 +680,7 @@ namespace Utils
                         break;
                     }
 
-                    case CommandType::Play:
+                    case Netconnection::CommandType::Play:
                     {
                         Netconnection::Play* cmd = new Netconnection::Play();
                         /**
@@ -714,7 +721,7 @@ namespace Utils
                         break;
                     }
 
-                    case CommandType::Play2:
+                    case Netconnection::CommandType::Play2:
                     {
                         Netconnection::Play2* cmd = new Netconnection::Play2();
                         /**
@@ -737,7 +744,7 @@ namespace Utils
                         break;
                     }
 
-                    case CommandType::DeleteStream:
+                    case Netconnection::CommandType::DeleteStream:
                     {
                         Netconnection::DeleteStream* cmd = new Netconnection::DeleteStream();
                         /**
@@ -759,7 +766,7 @@ namespace Utils
                         return cmd;
                         break;
                     }
-                    case CommandType::ReceiveAudio:
+                    case Netconnection::CommandType::ReceiveAudio:
                     {
                         Netconnection::ReceiveAudio* cmd = new Netconnection::ReceiveAudio();
                         /**
@@ -782,7 +789,7 @@ namespace Utils
                         break;
                     }
 
-                    case CommandType::ReceiveVideo:
+                    case Netconnection::CommandType::ReceiveVideo:
                     {
                         Netconnection::ReceiveVideo* cmd = new Netconnection::ReceiveVideo();
                         /**
@@ -805,7 +812,7 @@ namespace Utils
                         break;
                     }
 
-                    case CommandType::Publish:
+                    case Netconnection::CommandType::Publish:
                     {
                         Netconnection::Publish* cmd = new Netconnection::Publish();
                         /**
@@ -848,7 +855,7 @@ namespace Utils
                         break;
                     }
 
-                    case CommandType::Seek:
+                    case Netconnection::CommandType::Seek:
                     {
                         Netconnection::Seek* cmd = new Netconnection::Seek();
                         /**
@@ -871,7 +878,7 @@ namespace Utils
                         break;
                     }
 
-                    case CommandType::Pause:
+                    case Netconnection::CommandType::Pause:
                     {
                         Netconnection::Pause* cmd = new Netconnection::Pause();
                         /**
@@ -900,7 +907,7 @@ namespace Utils
                         break;
                     }
 
-                    case CommandType::Null:
+                    case Netconnection::CommandType::Null:
                         Utils::FormatedPrint::PrintFormated(
                             "AMF0Decoder::DecodeCommand", 
                             "Error, null command type.");
