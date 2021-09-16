@@ -127,6 +127,9 @@ namespace Utils
                 AMF0::Data data;
                 vector<unsigned char> vData;
 
+                // Object marker.
+                vData.insert(vData.end(), 1, 0x03);
+
                 for (pair p : value)
                 {
                     /**
@@ -134,6 +137,10 @@ namespace Utils
                      */
                     std::string propertyNameString = 
                         PropertyNameLinker.at(p.first);
+                    Utils::FormatedPrint::PrintFormated(
+                        "AMF0Encoder::EncodeObject",
+                        "Key name: " + propertyNameString
+                    );
                     vData.insert(vData.end(), propertyNameString.data(), propertyNameString.data() + propertyNameString.length());
                     
                     /**
@@ -147,56 +154,54 @@ namespace Utils
                             "Error, cannot cast field type.");
                         break;
                     }
-                    switch (property->type)
+                    if (Field<double>* field = dynamic_cast<Field<double>*>(property))
                     {
-                        case DataType::Number:
-                        {
-                            Field<double>* field = dynamic_cast<Field<double>*>(property);
-                            if (field == nullptr) break;
-                            double fieldValue = field->value;
-                            
-                            AMF0::Data fieldData = EncodeNumber(fieldValue);
-                            vData.insert(vData.end(), fieldData.data, fieldData.data + fieldData.size);
-                        };
-                        case DataType::Boolean:
-                        {
-                            Field<bool>* field = dynamic_cast<Field<bool>*>(property);
-                            if (field == nullptr) break;
-                            bool fieldValue = field->value;
-                            
-                            AMF0::Data fieldData = EncodeBoolean(fieldValue);
-                            vData.insert(vData.end(), fieldData.data, fieldData.data + fieldData.size);
-                        };
-                        case DataType::String:
-                        {
-                            Field<string>* field = dynamic_cast<Field<string>*>(property);
-                            if (field == nullptr) break;
+                        double fieldValue = field->value;
 
-                            string fieldValue = field->value;
-                            
-                            AMF0::Data fieldData = EncodeString(fieldValue);
-                            vData.insert(vData.end(), fieldData.data, fieldData.data + fieldData.size);
+                        AMF0::Data fieldData = EncodeNumber(fieldValue);
+                        vData.insert(vData.end(), fieldData.data, fieldData.data + fieldData.size);
+                    }
+                    else if (Field<bool>* field = dynamic_cast<Field<bool>*>(property))
+                    {
+                        bool fieldValue = field->value;
+                        
+                        AMF0::Data fieldData = EncodeBoolean(fieldValue);
+                        vData.insert(vData.end(), fieldData.data, fieldData.data + fieldData.size);
+                    }
+                    else if (Field<string>* field = dynamic_cast<Field<string>*>(property))
+                    {
+                        string fieldValue = field->value;
+                        
+                        AMF0::Data fieldData = EncodeString(fieldValue);
+                        vData.insert(vData.end(), fieldData.data, fieldData.data + fieldData.size);
 
-                            Utils::FormatedPrint::PrintFormated(
-                                "AMF0Encoder::EncodeObject", 
-                                "Field value: " + fieldValue + ".");
+                        Utils::FormatedPrint::PrintFormated(
+                            "AMF0Encoder::EncodeObject", 
+                            "Field value: " + fieldValue + ".");
+                    }
+                    else if (Field<Object>* field = dynamic_cast<Field<Object>*>(property))
+                    {
+                        Object fieldValue = field->value;
+                        Utils::FormatedPrint::PrintFormated(
+                            "AMF0Encoder::EncodeObject",
+                            "Object datatype."
+                        );
 
-                        };
-                        case DataType::Object: 
-                        {
-                            Field<Object>* field = dynamic_cast<Field<Object>*>(property);
-                            if (field == nullptr) break;
-
-                            Object fieldValue = field->value;
-
-                            AMF0::Data fieldData = EncodeObject(fieldValue);
-                            vData.insert(vData.end(), fieldData.data, fieldData.data + fieldData.size);
-                        };
-                    }                    
+                        AMF0::Data fieldData = EncodeObject(fieldValue);
+                        vData.insert(vData.end(), fieldData.data, fieldData.data + fieldData.size);
+                    }                 
                 }
 
-                data.data = vData.data();
+
+                // End of object marker.
+                unsigned char endMarker[3]{0, 0, 0x09};
+                vData.insert(vData.end(), endMarker, endMarker + 3);
+
                 data.size = vData.size();
+                data.data = new unsigned char[data.size];
+
+                for (int i = 0; i < data.size; i++)
+                    data.data[i] = vData.at(i);
 
                 return data;
             }
@@ -258,6 +263,14 @@ namespace Utils
                     new unsigned char[2]{bytes[index + 1], bytes[index + 2]}, 
                     false, 
                     2);
+
+                if ((index + length) > size)
+                {
+                    Utils::FormatedPrint::PrintError(
+                        "AMF0Decoder::DecodeString",
+                        "Error, String out of range.");
+                    return;
+                }
 
                 Utils::FormatedPrint::PrintFormated(
                     "AMF0Decoder::DecodeString", 
@@ -413,6 +426,7 @@ namespace Utils
                         "Key string: " + key + ".");
 
                     lastMarker = (AMF0::type_markers)bytes[lastIndex];
+                    if (((int)lastMarker) > 0x10) break;
                     Property* property = DecodeField(bytes, size, lastIndex, lastMarker);
                     PropertyType propertyType = PropertyTypeLinker.at(key);
 
