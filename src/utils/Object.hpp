@@ -35,6 +35,8 @@ namespace Utils
     template <typename T>
     struct Field : Property
     {
+        Field(){};
+        Field(T value) : value(value){};
         T value;
     };
 
@@ -50,7 +52,14 @@ namespace Utils
         videoFunction,
         pageUrl,
         objectEncoding,
-        type
+        type,
+
+        // Connect response specific properties.
+        fmsVer,
+        capabilities,
+        status,
+        code,
+        description
     };
 
     static inline map<std::string, PropertyType> PropertyTypeLinker = {
@@ -65,6 +74,12 @@ namespace Utils
         {"pageUrl", PropertyType::pageUrl},
         {"objectEncoding", PropertyType::objectEncoding},
         {"type", PropertyType::type},
+
+        {"fmsVer", PropertyType::fmsVer},
+        {"capabilities", PropertyType::capabilities},
+        {"status", PropertyType::status},
+        {"code", PropertyType::code},
+        {"description", PropertyType::description}
     };
 
     static inline map<PropertyType, std::string> PropertyNameLinker = {
@@ -78,7 +93,13 @@ namespace Utils
         {PropertyType::videoFunction, "videoFunction"},
         {PropertyType::pageUrl, "pageUrl"},
         {PropertyType::objectEncoding, "objectEncoding"},
-        {PropertyType::type, "type"}
+        {PropertyType::type, "type"},
+
+        {PropertyType::fmsVer, "fmsVer"},
+        {PropertyType::capabilities, "capabilities"},
+        {PropertyType::status, "status"},
+        {PropertyType::code, "code"},
+        {PropertyType::description, "description"}
     };
         
     typedef map<PropertyType, Property*> Object;

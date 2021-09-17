@@ -182,10 +182,11 @@ int main(int argc, char** argv) {
 
             if (!iSendResult && iSendResult != STANDBY) 
             {
-                iSendResult = send( ClientSocket, &recvBuffer[0], iResult, 0);
-                Utils::FormatedPrint::PrintFormated(
-                    "Server", 
-                    "Mirrored received data.");
+                iSendResult = 1;
+                // iSendResult = send( ClientSocket, &recvBuffer[0], iResult, 0);
+                // Utils::FormatedPrint::PrintFormated(
+                //     "Server", 
+                //     "Mirrored received data.");
             }
             
             if (iSendResult == SOCKET_ERROR) {

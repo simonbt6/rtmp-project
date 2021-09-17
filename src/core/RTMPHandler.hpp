@@ -12,6 +12,7 @@
 #include "RTMPSession.hpp"
 #include "RTMPHandshake.hpp"
 #include "RTMPMessage.hpp"
+#include "RTMPResponse.hpp"
 
 #include "../utils/Bit.hpp"
 #include "../utils/amf0.hpp"
@@ -42,6 +43,8 @@ namespace RTMP
             static int HandleCommandMessage(Netconnection::Command*, Session&);
             static void HandleVideoMessage(unsigned char*, Session&);
             static void HandleAudioMessage(unsigned char*, Session&);
+
+            static int InitializeConnect(Session& session);
 
             static int HandleChunk(Chunk& chunk, Session& session);
 

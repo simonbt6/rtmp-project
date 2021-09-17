@@ -312,7 +312,7 @@ namespace RTMP {
 
     void Parser::ParseChunkData(vector<unsigned char>& data, Chunk& chunk) 
     {
-        int size = data.size();
+        int size = chunk.messageHeader.message_length;
         Utils::FormatedPrint::PrintFormated(
             "Parser::ParseChunkData", 
             "Payload/chunk size: " + to_string(size) + ".");
@@ -507,7 +507,7 @@ namespace RTMP {
             Chunk chunk;
             session.lastChunk = &chunk;
             vector<unsigned char> remainingChunkData(data.begin() + index, data.end());
-            Utils::FormatedPrint::PrintBytes<unsigned char>(remainingChunkData.data(), remainingChunkData.size());
+            // Utils::FormatedPrint::PrintBytes<unsigned char>(remainingChunkData.data(), remainingChunkData.size());
 
             ParseChunkBasicHeader(remainingChunkData, chunk);
             ParseChunkMessageHeader(remainingChunkData, chunk);
@@ -530,8 +530,8 @@ namespace RTMP {
              * Parse chunk body. 
              */
             vector<unsigned char> chunkData(
-                remainingChunkData.begin(), 
-                remainingChunkData.begin() + chunk.messageHeader.message_length);
+                remainingChunkData.begin() + chunk.displacement, 
+                remainingChunkData.begin() + chunk.displacement + chunk.messageHeader.message_length);
             ParseChunkData(chunkData, chunk);
 
             Utils::FormatedPrint::PrintFormated(

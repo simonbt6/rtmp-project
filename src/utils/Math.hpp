@@ -36,28 +36,34 @@ namespace Utils
                 return remainers;
             }
 
-            static vector<int> BitsToBytes(vector<int>& bits)
+            static char* BitsToBytes(vector<int>& bits)
             {
-                vector<int> bytes;
-                unsigned int byte = 0;
-                for (int i = 0; i < bits.size(); i++)
+                char* bytes = new char[8];
+
+                for (int i = 0; i < bits.size(); i += 8)
                 {
-                    if (bits.at(i))
-                        byte |= 1 << (i % 8);
-                    if ((i) % 7 == 0 && i != 0)
+                    char byte = 0;
+                    int z = 7;
+                    for (int n = 0; n < 8; n++)
                     {
-                        bytes.push_back(byte);
-                        byte = 0;
+                        if (bits.at(n + i))
+                            byte += 1 << (z);
+                        z--;
                     }
+                    bytes[i / 8] = byte;
+                    printf("\nByte value: %X", byte);
                 }
-                reverse(bytes.begin(), bytes.end());
                 return bytes;
             }
             
         public:
 
-            static int* DoubleToIEEE754(double value)
+            static char* DoubleToIEEE754(double value)
             {
+                Utils::FormatedPrint::PrintFormated(
+                    "Math::DoubleToIEEE754",
+                    "Double value: " + to_string((int)value)
+                );
                 // 1.
                 vector<int> bMantissa = Base2(value);
 
@@ -73,34 +79,28 @@ namespace Utils
                 // 6.
                 vector<int> bExposant = Base2(vExposant);
                 reverse(bExposant.begin(), bExposant.end());
+                bExposant.insert(bExposant.begin(), 11 - bExposant.size(), 0);
+
 
                 // 8. Normalize mantissa
                 bMantissa.erase(bMantissa.begin());
-                int size = bMantissa.size();
-
-                for (int i = 0; i < (52 - size); i++)
-                    bMantissa.push_back(0);
 
                 // 9.
                 vector<int> bValue;
                 bValue.push_back((value > 0)? 0 : 1);
                 bValue.insert(bValue.end(), bExposant.begin(), bExposant.end());
                 bValue.insert(bValue.end(), bMantissa.begin(), bMantissa.end());
-                reverse(bValue.begin(), bValue.end());
+                bValue.insert(bValue.end(), 64 - bValue.size(), 0);
+                // reverse(bValue.begin(), bValue.end());
 
-                vector<int> bytes = BitsToBytes(bValue);
+                char* bytes = BitsToBytes(bValue);
 
-                int* data = new int[8];
-                /* printf("\n\n[Math::DoubleToIEEE754] IEEE754 bytes: ");
-                for (int i = 0; i < 8; i++)
-                {
-                    data[i] = bytes.at(i);
-                    printf("%X ", bytes.at(i));
-                }
-                printf("\n\n"); */
+                printf("\n\n[Math::DoubleToIEEE754] IEEE754 bytes: ");
+                for (int i = 0; i < 8; i++) 
+                    printf("%X ", bytes[i]);
                 
                 // TODO: Fix value 0 number.
-                return value ? new int[8]{0,0,0,0,0,0,0,0} : data;
+                return value ? bytes : new char[8]{0,0,0,0,0,0,0,0};
             }
 
             static double IE754ToDouble(unsigned char* bytes)
