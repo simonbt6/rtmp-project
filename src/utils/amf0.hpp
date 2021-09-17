@@ -105,19 +105,20 @@ namespace Utils
                 return data;
             }
 
-            static AMF0::Data EncodeString(string& value)
+            static AMF0::Data EncodeString(string& value, bool marker)
             {
                 AMF0::Data data;
-                data.size = value.length() + 3;
+                data.size = marker ? value.length() + 3 : value.length() + 2;
                 data.data = new unsigned char[data.size];
 
-                data.data[0] = AMF0::type_markers::string_marker;
-                
-                data.data[1] = value.length() / 256;
-                data.data[2] = value.length() % 256;
+                if (marker)
+                    data.data[0] = (int)AMF0::type_markers::string_marker;
+
+                data.data[marker? 1 : 0] = value.length() / 256;
+                data.data[marker? 2 : 1] = value.length() % 256;
 
                 for (int i = 0; i < value.length(); i++)
-                    data.data[i + 3] = value[i];
+                    data.data[i + (marker? 3 : 2)] = value[i];
 
                 return data;
             }
@@ -141,7 +142,8 @@ namespace Utils
                         "AMF0Encoder::EncodeObject",
                         "Key name: " + propertyNameString
                     );
-                    vData.insert(vData.end(), propertyNameString.data(), propertyNameString.data() + propertyNameString.length());
+                    AMF0::Data propertyNameData = EncodeString(propertyNameString, false);
+                    vData.insert(vData.end(), propertyNameData.data, propertyNameData.data + propertyNameData.size);
                     
                     /**
                      * Property Data.
@@ -172,7 +174,7 @@ namespace Utils
                     {
                         string fieldValue = field->value;
                         
-                        AMF0::Data fieldData = EncodeString(fieldValue);
+                        AMF0::Data fieldData = EncodeString(fieldValue, true);
                         vData.insert(vData.end(), fieldData.data, fieldData.data + fieldData.size);
 
                         Utils::FormatedPrint::PrintFormated(
