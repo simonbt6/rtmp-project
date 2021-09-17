@@ -10,72 +10,37 @@
 #include <string>
 #include <map>
 
+#include "../utils/Object.hpp"
+
 using namespace std;
 
-enum PropertyType
-{
-    app,
-    flashver,
-    swtUrl,
-    tcUrl,
-    fpad,
-    audioCodecs,
-    videoCodecs,
-    videoFunction,
-    pageUrl,
-    objectEncoding
-};
 
-struct Property 
-{
-    PropertyType type;
-    virtual ~Property() = default;
-};
 
-template<typename T>
-struct Field: Property
-{
-    T m_Value;
-};
-
-enum CommandType
-{
-    Null,
-    Connect,
-    ConnectResponse,
-    Call,
-    CallResponse,
-    CreateStream,
-    CreateStreamResponse,
-    OnStatus,
-    Play,
-    Play2,
-    DeleteStream,
-    ReceiveAudio,
-    ReceiveVideo,
-    Publish,
-    Seek,
-    Pause
-}; 
 
 class Netconnection
 {
     public:
-        typedef map<PropertyType, Property*> Object;
-        static inline map<string, PropertyType> propertyTypeLinker = {
-            {"app", PropertyType::app},
-            {"flashver", PropertyType::flashver},
-            {"swtUrl", PropertyType::swtUrl},
-            {"tcUrl", PropertyType::tcUrl},
-            {"fpad", PropertyType::fpad},
-            {"audioCodecs", PropertyType::audioCodecs},
-            {"videoCodecs", PropertyType::videoCodecs},
-            {"videoFunction", PropertyType::videoFunction},
-            {"pageUrl", PropertyType::pageUrl},
-            {"objectEncoding", PropertyType::objectEncoding},
-        };
+        enum class CommandType
+        {
+            Null,
+            Connect,
+            ConnectResponse,
+            Call,
+            CallResponse,
+            CreateStream,
+            CreateStreamResponse,
+            OnStatus,
+            Play,
+            Play2,
+            DeleteStream,
+            ReceiveAudio,
+            ReceiveVideo,
+            Publish,
+            Seek,
+            Pause
+        }; 
         
-        static inline map<string, CommandType> CommandLinker = {
+        static inline map<std::string, CommandType> CommandLinker = {
             {"connect", CommandType::Connect},
             {"connectResponse", CommandType::ConnectResponse},
             {"call", CommandType::Call},
@@ -105,7 +70,7 @@ class Netconnection
              * 
              * Name of the command.
              **/
-            string CommandName;
+            std::string CommandName;
             
             /**
              * Transaction ID
@@ -113,11 +78,11 @@ class Netconnection
             unsigned short TransactionID;
 
             /**
-             * Command Object
+             * Command Utils::Object
              * 
-             * Command information object which has name-value pairs.
+             * Command information Utils::Object which has name-value pairs.
              **/
-            Object CommandObject;
+            Utils::Object CommandObject;
 
             virtual ~Command() = default;
         };
@@ -134,7 +99,7 @@ class Netconnection
              * 
              * Name of the command. Set to 'connect'.
              **/
-            string CommandName = "connect";
+            std::string CommandName = "connect";
 
             /**
              * Always set to 1.
@@ -144,7 +109,7 @@ class Netconnection
             /**
              * Any optional arguments to be provided.
              **/
-            Object OptionalUserArguments;
+            Utils::Object OptionalUserArguments;
         };
 
         struct ConnectResponse : public Command
@@ -159,7 +124,7 @@ class Netconnection
              * 
              * _result or _error; indicates whether the response is result or error.
              **/
-            string CommandName;
+            std::string CommandName;
 
             /**
              * Transaction ID
@@ -173,7 +138,7 @@ class Netconnection
              * 
              * Name-value pairs that describe the properties of the connection.
              **/
-            Object Properties;
+            Utils::Object Properties;
 
             /**
              * Information
@@ -182,7 +147,7 @@ class Netconnection
              * 'code', 'level' or 'description' are name of few among such
              * information.
              **/
-            Object Information;
+            Utils::Object Information;
         };
 
         struct Call : public Command
@@ -197,7 +162,7 @@ class Netconnection
              * 
              * Name of the remote procedure that is called.
              **/
-            string CommandName;
+            std::string CommandName;
             
             /**
              * Transaction ID
@@ -210,7 +175,7 @@ class Netconnection
             /**
              * Any optional arguments to be provided.
              **/
-            Object OptionalArguments;
+            Utils::Object OptionalArguments;
         };
 
         struct CallResponse : public Command
@@ -228,19 +193,19 @@ class Netconnection
             unsigned short TransactionID;
 
             /**
-             * Command Object
+             * Command Utils::Object
              * 
              * If there exists any command info, this is set.
              * Else, this is set to null type.
              **/
-            Object CommandObject;
+            Utils::Object CommandObject;
             
             /**
              * Response
              * 
              * Response from the method called.
              **/
-            Object Response;
+            Utils::Object Response;
         };
 
         struct CreateStream : public Command
@@ -253,7 +218,7 @@ class Netconnection
             /**
              * Command Name
              **/   
-            string CommandName = "createStream";
+            std::string CommandName = "createStream";
 
             /**
              * Transaction ID
@@ -275,12 +240,12 @@ class Netconnection
              * 
              * _result or _error; indicates whether the response is result or error.
              **/
-            string CommandName;
+            std::string CommandName;
             
             /**
              * Stream ID
              * 
-             * The return value is either a stream ID or an error information object.
+             * The return value is either a stream ID or an error information Utils::Object.
              **/
             unsigned int StreamID;
         };
@@ -295,7 +260,7 @@ class Netconnection
             /**
              * Command Name
              **/
-            string CommandName;
+            std::string CommandName;
 
             /**
              * Transaction ID
@@ -303,16 +268,16 @@ class Netconnection
             unsigned short TransactionID = 0;
 
             /**
-             * Command Object
+             * Command Utils::Object
              * 
-             * There is no command object for onStatus messages.
+             * There is no command Utils::Object for onStatus messages.
              **/
-            Object CommandObject;
+            Utils::Object CommandObject;
 
             /**
-             * Information object.
+             * Information Utils::Object.
              **/
-            Object Information;
+            Utils::Object Information;
         };
 
         struct Play : public Command
@@ -325,7 +290,7 @@ class Netconnection
             /**
              * Command Name
              **/
-            string CommandName = "play";
+            std::string CommandName = "play";
 
             /**
              * Transaction ID
@@ -333,11 +298,11 @@ class Netconnection
             unsigned short TransactionID = 0;
             
             /**
-             * Command Object
+             * Command Utils::Object
              * 
              * Command information does not exist. Set to null type.
              **/
-            Object CommandObject;
+            Utils::Object CommandObject;
 
             /**
              * Stream Name
@@ -349,7 +314,7 @@ class Netconnection
              * To play H.264/AAC files, you must precede the stream name with mp4:
              * and specify the file extension. For example: "mp4:sample.m4v").
              **/
-            string StreamName;
+            std::string StreamName;
 
             /**
              * Start
@@ -388,7 +353,7 @@ class Netconnection
             /**
              * Command Name
              **/
-            string CommandName = "play2";
+            std::string CommandName = "play2";
 
             /**
              * Transaction ID
@@ -396,19 +361,19 @@ class Netconnection
             unsigned short TransactionID = 0;
             
             /**
-             * Command Object
+             * Command Utils::Object
              * 
              * Command information does not exist. Set to null type.
              **/
-            Object CommandObject;
+            Utils::Object CommandObject;
 
             /**
              * Parameters
              * 
-             * An AMF encoded object whose properties are the public properties described
-             * for the flash.net.NetStreamPlayOptions ActionScript object.
+             * An AMF encoded Utils::Object whose properties are the public properties described
+             * for the flash.net.NetStreamPlayOptions ActionScript Utils::Object.
              **/
-            Object Parameters;
+            Utils::Object Parameters;
         };
 
         struct DeleteStream : public Command
@@ -421,7 +386,7 @@ class Netconnection
             /**
              * Command Name
              **/
-            string commandName = "deleteStream";
+            std::string commandName = "deleteStream";
 
             /**
              * Transaction ID
@@ -444,7 +409,7 @@ class Netconnection
             /**
              * Command Name
              **/
-            string CommandName = "receiveAudio";
+            std::string CommandName = "receiveAudio";
 
             /**
              * Transaction ID
@@ -452,11 +417,11 @@ class Netconnection
             unsigned short TransactionID = 0;
 
             /**
-             * Command Object
+             * Command Utils::Object
              * 
-             * Command information object does not exist. Set to null type.
+             * Command information Utils::Object does not exist. Set to null type.
              **/
-            Object CommandObject;
+            Utils::Object CommandObject;
 
             /**
              * Bool Flag
@@ -476,7 +441,7 @@ class Netconnection
             /**
              * Command Name
              **/
-            string CommandName = "receiveVideo";
+            std::string CommandName = "receiveVideo";
 
             /**
              * Transaction ID
@@ -484,11 +449,11 @@ class Netconnection
             unsigned short TransactionID = 0;
             
             /**
-             * Command Object
+             * Command Utils::Object
              * 
-             * Command information object does not exist. Set to null type.
+             * Command information Utils::Object does not exist. Set to null type.
              **/
-            Object CommandObject;
+            Utils::Object CommandObject;
 
             /**
              * Bool Flag
@@ -508,7 +473,7 @@ class Netconnection
             /**
              * Command Name
              **/
-            string CommandName = "publish";
+            std::string CommandName = "publish";
 
             /**
              * Transaction ID is set to 0.
@@ -516,18 +481,18 @@ class Netconnection
             unsigned short TransactionID = 0;
 
             /**
-             * Command Object
+             * Command Utils::Object
              * 
-             * Command information object does not exist. Set to null type.
+             * Command information Utils::Object does not exist. Set to null type.
              **/
-            Object CommandObject;
+            Utils::Object CommandObject;
 
             /**
              * Publishing Name
              * 
              * Name with which the stream is published.
              **/
-            string PublishingName;
+            std::string PublishingName;
 
             /**
              * Publishing Type
@@ -543,7 +508,7 @@ class Netconnection
              * 
              * Live: Live data is published without recording it in a file.
              **/
-            string PublishingType;
+            std::string PublishingType;
         };  
 
         struct Seek : public Command
@@ -556,7 +521,7 @@ class Netconnection
             /**
              * Command Name
              **/
-            string CommandName = "seek"; 
+            std::string CommandName = "seek"; 
             
             /**
              * Transaction ID
@@ -566,11 +531,11 @@ class Netconnection
             unsigned short TransactionID = 0;
 
             /**
-             * Command Object
+             * Command Utils::Object
              * 
-             * There is no command information object for this command. Set to null type.
+             * There is no command information Utils::Object for this command. Set to null type.
              **/
-            Object CommandObject;
+            Utils::Object CommandObject;
 
             /**
              * Milliseconds
@@ -590,7 +555,7 @@ class Netconnection
             /**
              * Command Name
              **/
-            string CommandName = "pause";
+            std::string CommandName = "pause";
             
             /**
              * Transaction ID
@@ -600,11 +565,11 @@ class Netconnection
             unsigned short TransactionID = 0;
 
             /**
-             * Command Object
+             * Command Utils::Object
              * 
-             * Command information object does not exist. Set to null type.
+             * Command information Utils::Object does not exist. Set to null type.
              **/
-            Object CommandObject;
+            Utils::Object CommandObject;
 
             /**
              * Pause/Unpause Flag
@@ -648,7 +613,7 @@ class Netconnection
          *    command). The message also specifies the properties, such as
          *    Flash Media Server version (string). In addition, it specifies
          *    other connection response related infromations like level (string),
-         *    code (string), description (string), ObjectEncoding (number)...
+         *    code (string), description (string), Utils::ObjectEncoding (number)...
          **/
         void connect();
         /**

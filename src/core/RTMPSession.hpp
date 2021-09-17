@@ -10,6 +10,7 @@
 
 #include "RTMPHandshake.hpp"
 #include "RTMPChunk.hpp"
+#include "Netconnection.hpp"
 
 #include <vector>
 #ifdef _WIN32
@@ -36,6 +37,8 @@ namespace RTMP
         Chunk* lastChunk = nullptr;
         vector<unsigned char> remainingBytes;
 
+        Netconnection::Command* pendingCommand;
+
         /**
          * Handling
          **/
@@ -43,9 +46,9 @@ namespace RTMP
 
         int timestamps = 0;
 
-        int ChunkSize = 128;
-
         int Bandwidth = 4096;
+
+        int totalBytes = 0;
 
 
     };

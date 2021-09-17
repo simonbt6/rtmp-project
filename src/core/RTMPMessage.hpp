@@ -4,6 +4,8 @@
  * Date: 2021-08-08
  **/
 
+#include <vector>
+using namespace std;
 
 namespace RTMP
 {
@@ -23,6 +25,39 @@ namespace RTMP
             SetPeerBandwidth = 0x06,
         };
 
+        enum class PeerBandwithLimitType
+        {
+            /**
+             * Hard Limit Type.
+             * 
+             * The peer should limit its output bandwith to the indicated window size.
+             */
+            Hard,
+            /**
+             * Soft Limit Type. 
+             * 
+             * The peer should limit its output bandwith to the window indicated in this message.
+             * Or the limit already in effect, whichever is smaller.
+             */
+            Soft,
+            /**
+             * Dynamic Limit Type. 
+             * 
+             * If the previous limit type was hard, treat this message as though it was marked hard. 
+             * Otherwise, ignore this message.
+             */
+            Dynamic
+        };
+
+        /**
+         * Protocol Control Message 
+         */
+        public:
+            static vector<char> vSetChunkSize(int chunkSize);
+            static vector<char> vAbort(int csid);
+            static vector<char> vAcknowledgement(int receivedBytes);
+            static vector<char> vSetWindowAcknowledgementSize(int size);
+            static vector<char> vSetPeerBandwidth(int size, PeerBandwithLimitType type);
     };
 
     struct Message {

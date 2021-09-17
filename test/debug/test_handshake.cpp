@@ -43,7 +43,7 @@ void readHandshakeTest()
     vector<unsigned char> C0C1Data = read("data/handshakeC0C1.bin");
     vector<unsigned char> C2Data = read("data/handshakeC2.bin");
 
-    vector<unsigned char> connectCmd = read("data/connectempty.bin");
+    vector<unsigned char> connectCmd = read("data/connectResponse.bin");
     vector<unsigned char> createstreamCmd = read("data/createstream.bin");
 
     // Parse handshake

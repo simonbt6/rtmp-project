@@ -33,8 +33,10 @@ vector<unsigned char> SignedToUnsignedVector(vector<char>& in, int length)
     vector<unsigned char> out(length);
     for (int i = 0; i < length; i++)
         out.at(i) = in[i];
-    printf("\nOut vector size: %i [%i]", (signed)out.size(), length);
-    // in.resize(length);
+    Utils::FormatedPrint::PrintFormated(
+        "Server", 
+        "Out vector size: [" + to_string((signed)out.size()) + "].");
+
     return out;
 }
 
@@ -57,7 +59,10 @@ int main(int argc, char** argv) {
     // Initialize Winsock
     iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
     if (iResult != 0) {
-        printf("WSAStartup failed with error: %d\n", iResult);
+        Utils::FormatedPrint::PrintError(
+            "Server", 
+            string("WSAStartup failed with error: " + to_string(WSAGetLastError()) + "."));
+            
         return 1;
     }
 
@@ -70,7 +75,10 @@ int main(int argc, char** argv) {
     // Resolve the server address and port
     iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result);
     if ( iResult != 0 ) {
-        printf("getaddrinfo failed with error: %d\n", iResult);
+        Utils::FormatedPrint::PrintError(
+            "Server", 
+            string("getaddrinfo failed with error: " + to_string(WSAGetLastError()) + "."));
+            
         WSACleanup();
         return 1;
     }
@@ -78,7 +86,10 @@ int main(int argc, char** argv) {
     // Create a SOCKET for connecting to server
     ListenSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
     if (ListenSocket == INVALID_SOCKET) {
-        printf("socket failed with error: %ld\n", WSAGetLastError());
+        Utils::FormatedPrint::PrintError(
+            "Server", 
+            string("socket failed with error: " + to_string(WSAGetLastError()) + "."));
+
         freeaddrinfo(result);
         WSACleanup();
         return 1;
@@ -87,7 +98,10 @@ int main(int argc, char** argv) {
     // Setup the TCP listening socket
     iResult = bind( ListenSocket, result->ai_addr, (int)result->ai_addrlen);
     if (iResult == SOCKET_ERROR) {
-        printf("bind failed with error: %d\n", WSAGetLastError());
+        Utils::FormatedPrint::PrintError(
+            "Server", 
+            string("bind failed with error: " + to_string(WSAGetLastError()) + "."));
+
         freeaddrinfo(result);
         closesocket(ListenSocket);
         WSACleanup();
@@ -98,7 +112,10 @@ int main(int argc, char** argv) {
 
     iResult = listen(ListenSocket, SOMAXCONN);
     if (iResult == SOCKET_ERROR) {
-        printf("listen failed with error: %d\n", WSAGetLastError());
+        Utils::FormatedPrint::PrintError(
+            "Server", 
+            string("listen failed with error: " + to_string(WSAGetLastError()) + "."));
+
         closesocket(ListenSocket);
         WSACleanup();
         return 1;
@@ -108,14 +125,22 @@ int main(int argc, char** argv) {
     setsockopt(ListenSocket, IPPROTO_TCP, TCP_NODELAY, (char *)&flags, sizeof(flags));
     if (iResult == SOCKET_ERROR)
     {
-        printf("\nsetsockopt failed.");
+        Utils::FormatedPrint::PrintError(
+            "Server", 
+            string("setsockopt failed with error: " + to_string(WSAGetLastError()) + "."));
+        
     }
-    printf("\nRTMP server listening on port 1935.");
+    Utils::FormatedPrint::PrintFormated(
+            "Server", 
+            "RTMP win32 server listening on port 1935.");
 
     // Accept a client socket
     ClientSocket = accept(ListenSocket, NULL, NULL);
     if (ClientSocket == INVALID_SOCKET) {
-        printf("accept failed with error: %d\n", WSAGetLastError());
+        Utils::FormatedPrint::PrintError(
+            "Server", 
+            string("accept failed with error: " + to_string(WSAGetLastError()) + ".")); 
+            
         closesocket(ListenSocket);
         WSACleanup();
         return 1;
@@ -134,38 +159,59 @@ int main(int argc, char** argv) {
             expectedlength = 1537;
         else if (session.handshake.state == Handshake::State::AcknowledgeSent)
             expectedlength = 1536;
-        else if (session.lastChunk != nullptr && session.lastChunk->missingData)
-            expectedlength = session.lastChunk->missingData;
+        // else if (session.lastChunk != nullptr && session.lastChunk->missingData)
+        //     expectedlength = session.lastChunk->missingData;
         else expectedlength = DEFAULT_BUFLEN;
 
-        iResult = recv(ClientSocket, &recvBuffer[0], expectedlength, 0);
-        if (iResult > 0) {
+        Utils::FormatedPrint::PrintInfo("Bandwidth size: " + to_string(expectedlength));
 
-            printf("\n\n[Bytes received: %d]\n", iResult);
+        iResult = recv(ClientSocket, &recvBuffer[0], expectedlength, 0);
+        session.totalBytes += iResult;
+        if (iResult > 0) {
+            
+            Utils::FormatedPrint::PrintFormated(
+                "Server", 
+                string("Bytes received: " + to_string(iResult) + "."));
 
             vector<unsigned char> data = SignedToUnsignedVector(recvBuffer, iResult);
             Utils::LOGS::Log(data.data(), data.size());
             iSendResult = RTMP::Parser::ParseData(data, session);
-            printf("\nSend status: %i", iSendResult);
+            Utils::FormatedPrint::PrintFormated(
+                "Server", 
+                string("Send status: " + to_string(iSendResult) + "."));
 
             if (!iSendResult && iSendResult != STANDBY) 
             {
                 iSendResult = send( ClientSocket, &recvBuffer[0], iResult, 0);
-                printf("\nMirrored data.");
+                Utils::FormatedPrint::PrintFormated(
+                    "Server", 
+                    "Mirrored received data.");
             }
             
             if (iSendResult == SOCKET_ERROR) {
-                printf("\nsend failed with error: %d\n", WSAGetLastError());
+                Utils::FormatedPrint::PrintError(
+                    "Server", 
+                    string("send failed with error: " + to_string(WSAGetLastError()) + "."));
+                    
                 closesocket(ClientSocket);
                 WSACleanup();
                 return 1;
             }
-            printf("\nBytes sent: %d", iSendResult);
+            Utils::FormatedPrint::PrintFormated(
+                "Server", 
+                string("Bytes sent: " + to_string(iSendResult) + "."));
+                
         }
         else if (iResult == 0)
-            printf("\nConnection closing...");
+            Utils::FormatedPrint::PrintFormated(
+                "Server", 
+                "Connection closing...");
+                
         else  {
-            printf("\nrecv failed with error: %d\n", WSAGetLastError());
+            Utils::FormatedPrint::PrintError(
+            "Server", 
+            string("recv failed with error: " + to_string(WSAGetLastError()) + "."));
+
             closesocket(ClientSocket);
             WSACleanup();
             return 1;
@@ -176,7 +222,10 @@ int main(int argc, char** argv) {
     // shutdown the connection since we're done
     iResult = shutdown(ClientSocket, SD_SEND);
     if (iResult == SOCKET_ERROR) {
-        printf("shutdown failed with error: %d\n", WSAGetLastError());
+        Utils::FormatedPrint::PrintError(
+            "Server", 
+            string("shutdown failed with error: ") + to_string(WSAGetLastError()) + string("."));
+            
         closesocket(ClientSocket);
         WSACleanup();
         return 1;
