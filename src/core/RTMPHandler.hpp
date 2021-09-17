@@ -4,7 +4,6 @@
  * Date: 2021-09-02
  **/
 
-#define _HAS_STD_BYTE 0
 #define WIN32_LEAN_AND_MEAN
 
 #include "Netconnection.hpp"

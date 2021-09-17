@@ -928,6 +928,34 @@ namespace Utils
                             "AMF0Decoder::DecodeCommand", 
                             "Error, null command type.");
                         break;
+                    
+                    case Netconnection::CommandType::ReleaseStream:
+                    {
+                        Netconnection::ReleaseStream* cmd = new Netconnection::ReleaseStream();
+
+                        /**
+                         * Transaction ID.
+                         */
+                        DecodeNumber(bytes, size, lastIndex, cmd->TransactionID);
+
+                        /**
+                         * Null marker.
+                         */
+                        lastIndex++;
+
+                        /**
+                         * Stream name.
+                         */
+                        DecodeString(bytes, size, lastIndex, cmd->StreamName);
+
+                        return cmd;
+                        break;
+                    }
+                    default:
+                        Utils::FormatedPrint::PrintError(
+                            "AMF0Decoder::DecodeCommand",
+                            "Command type not found.");
+                        break;
                 };
                 return nullptr;
             }

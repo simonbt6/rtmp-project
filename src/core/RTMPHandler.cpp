@@ -270,6 +270,20 @@ namespace RTMP
         {
             
         }
+        else if (Netconnection::ReleaseStream* cmd = dynamic_cast<Netconnection::ReleaseStream*>(command))
+        {
+            Utils::FormatedPrint::PrintFormated(
+                "Handler::HandleCommandMessage",
+                "Release Stream command message."
+            );
+        }
+        else if (Netconnection::FCPublish* cmd = dynamic_cast<Netconnection::FCPublish*>(command))
+        {
+            Utils::FormatedPrint::PrintFormated(
+                "Handler::HandleCommandMessage",
+                "FCPublish command message."
+            );
+        }
         else 
         {
             Utils::FormatedPrint::PrintError(

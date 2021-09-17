@@ -37,7 +37,9 @@ class Netconnection
             ReceiveVideo,
             Publish,
             Seek,
-            Pause
+            Pause,
+            ReleaseStream,
+            FCPublish
         }; 
         
         static inline map<std::string, CommandType> CommandLinker = {
@@ -55,7 +57,9 @@ class Netconnection
             {"receiveVideo", CommandType::ReceiveVideo},
             {"publish", CommandType::Publish},
             {"seek", CommandType::Seek},
-            {"pause", CommandType::Pause}
+            {"pause", CommandType::Pause},
+            {"releaseStream", CommandType::ReleaseStream},
+            {"FCPublish", CommandType::FCPublish}
         };
 
 
@@ -589,6 +593,26 @@ class Netconnection
             int Milliseconds = 0;
         };        
 
+        struct ReleaseStream : public Command
+        {
+            CommandType type = CommandType::ReleaseStream;
+
+            std::string CommandName = "releaseStream";
+
+            unsigned short TransactionID = 0;
+
+            std::string StreamName;
+        };
+
+        struct FCPublish : public Command
+        {
+            CommandType type = CommandType::FCPublish;
+            std::string CommandName = "FCPublish";
+
+            unsigned short TransactionID = 0;
+
+            std::string StreamName;
+        };
 
     public:
         
