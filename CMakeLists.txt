@@ -15,12 +15,15 @@ endif()
 set(SOURCE 
     test/win32_server.cpp
     src/core/RTMPMessage.cpp
+    src/core/RTMPResponse.cpp
     src/core/RTMPParser.cpp
     src/core/RTMPHandler.cpp
 )
 
 set (TEST_SOURCE
     test/debug/test_handshake.cpp
+    src/core/RTMPMessage.cpp
+    src/core/RTMPResponse.cpp
     src/core/RTMPParser.cpp
     src/core/RTMPHandler.cpp
 )

@@ -201,39 +201,18 @@ namespace RTMP
 
         if (Netconnection::Connect* cmd = dynamic_cast<Netconnection::Connect*>(command))
         {
+
             Utils::FormatedPrint::PrintFormated(
                 "Handler::HandleCommandMessage", 
                 "Connect command response.");          
 
-                /**
-                 * Send response.
-                 **/
-                bool success = true;
-                
-                vector<char> data;
-                
-                string commandName = success ? "_result" : "_error";
-                int transactionID = 1;
-                
+            session.pendingCommand = cmd;
 
-                Utils::AMF0::Data commandNameData =
-                    Utils::AMF0Encoder::EncodeString(commandName);
+            status += InitializeConnect(session);
 
-                Utils::AMF0::Data transactionIDData = 
-                    Utils::AMF0Encoder::EncodeNumber(transactionID);
+            Utils::FormatedPrint::PrintInfo("Initialize done.");
 
-                /**
-                 * Properties object.
-                 */
-                Utils::AMF0::Data propertiesData = 
-                    Utils::AMF0Encoder::EncodeObject(command->CommandObject);
-
-                data.insert(data.end(), commandNameData.data, commandNameData.data + commandNameData.size);
-                data.insert(data.end(), transactionIDData.data, transactionIDData.data + transactionIDData.size);
-                // data.insert(data.end(), propertiesData.data, propertiesData.data + propertiesData.size);
-
-
-                return SendChunk(data.data(), data.size(), session, 0x14);
+                        
         }
         else if (Netconnection::ConnectResponse* cmd = dynamic_cast<Netconnection::ConnectResponse*>(command))
         {
@@ -297,7 +276,7 @@ namespace RTMP
                 "Handler::HandleCommandMessage", 
                 "Unknown command type.");
         }
-        return 0;
+        return status;
     }
 
     void Handler::HandleVideoMessage(unsigned char* data, Session& session)
@@ -310,8 +289,50 @@ namespace RTMP
 
     }
 
+    int Handler::InitializeConnect(Session& session)
+    {
+        int status = 0;
+
+        /**
+         * Initialization: 
+         *  - Window acknowledge size
+         *  - Set peer bandwidth
+         *  - Set chunk size
+         *  - connect response (_result)
+         * 
+         **/
+
+        /**
+         * Window acknowledge size
+         */
+        vector<char> windowAckData = ProtocolControlMessage::vSetWindowAcknowledgementSize(4096);
+        status += SendChunk(windowAckData.data(), windowAckData.size(), session, (int)ProtocolControlMessage::Type::WindowAcknowledgementSize);
+
+        /**
+         * Set Peer Bandwith
+         */
+        vector<char> setPeerBandwidthData = ProtocolControlMessage::vSetPeerBandwidth(4096, ProtocolControlMessage::PeerBandwithLimitType::Hard);
+        status += SendChunk(setPeerBandwidthData.data(), setPeerBandwidthData.size(), session, (int)ProtocolControlMessage::Type::SetPeerBandwidth);
+
+        /**
+         * Set Chunk Size
+         */
+        vector<char> setChunkSizeData = ProtocolControlMessage::vSetChunkSize(4096);
+        status += SendChunk(setChunkSizeData.data(), setChunkSizeData.size(), session, (int)ProtocolControlMessage::Type::SetChunkSize);
+
+        /**
+         * Connect Response (_result)
+         */
+        vector<char> connectResponseData = ServerResponse::ConnectResponse(session);
+        status += SendChunk(connectResponseData.data(), connectResponseData.size(), session, 0x14);
+
+        return status;
+        
+    }
+
     int Handler::HandleChunk(Chunk& chunk, Session& session)
     {
+        Utils::FormatedPrint::PrintBytes<unsigned char>(chunk.data, chunk.messageHeader.message_length);
         int status = 0;
         /** 
          * Determine message type.
@@ -337,20 +358,18 @@ namespace RTMP
                 case ProtocolControlMessage::Type::SetChunkSize:
                 {
                     int chunksize = 0;
+                    for (int i = 0; i < 16; i++)
+                        printf("\n%i", chunk.data[i]);
                     Utils::BitOperations::bytesToInteger(
                         chunksize, 
-                        chunk.data, 
+                        session.lastChunk->data, 
                         false, 
                         chunk.messageHeader.message_length);
                     Utils::FormatedPrint::PrintFormated(
                         "Handler::HandleChunk", 
-                        "Protocol control message: Set chunk size" + to_string(chunksize) + ".");
+                        "Protocol control message: Set chunk size -> " + to_string(chunksize) + ".");
 
                     session.Bandwidth = chunksize;
-
-                    Utils::FormatedPrint::PrintFormated(
-                        "Handler::HandleChunk", 
-                        "Set bandwidth to " + to_string(session.Bandwidth) + " for socket " + to_string((int)session.socket) + ".");
                     break;
                 };
                 case ProtocolControlMessage::Type::Abort:
@@ -365,8 +384,8 @@ namespace RTMP
                     Utils::FormatedPrint::PrintFormated(
                         "Handler::HandleChunk", 
                         "Protocol control message: Abort. Stream ID: " + to_string(csid) + ".");
-                    vector<char> data = ProtocolControlMessage::vAbort(csid);
-                    SendChunk(data.data(), data.size(), session, ProtocolControlMessage::Abort);
+                    // vector<char> data = ProtocolControlMessage::vAbort(csid);
+                    // SendChunk(data.data(), data.size(), session, ProtocolControlMessage::Abort);
                     break;
                 };
                 case ProtocolControlMessage::Type::Acknowledgement:
@@ -385,7 +404,7 @@ namespace RTMP
                         "Handler::HandleChunk", 
                         "Protocol control message: Window Acknowledgement size.");
 
-                    status = Handler::HandleCommandMessage(session.pendingCommand, session);
+                    // status = Handler::HandleCommandMessage(session.pendingCommand, session);
                     break;
                 }
                 case ProtocolControlMessage::Type::SetPeerBandwidth:
@@ -396,8 +415,8 @@ namespace RTMP
                         "Handler::HandleChunk", 
                         "Protocol control message: Set peer Bandwidth.");
 
-                    vector<char> data = ProtocolControlMessage::vSetPeerBandwidth(bandwith, ProtocolControlMessage::PeerBandwithLimitType::Hard);
-                    SendChunk(data.data(), data.size(), session, ProtocolControlMessage::SetPeerBandwidth);
+                    // vector<char> data = ProtocolControlMessage::vSetPeerBandwidth(bandwith, ProtocolControlMessage::PeerBandwithLimitType::Hard);
+                    // SendChunk(data.data(), data.size(), session, ProtocolControlMessage::SetPeerBandwidth);
                     break;
                 }
             };
@@ -427,16 +446,12 @@ namespace RTMP
                     Utils::FormatedPrint::PrintFormated(
                         "Handler::HandleChunk", 
                         "AMF0 Command message.");
+                    Utils::FormatedPrint::PrintBytes<unsigned char>(chunk.data, chunk.messageHeader.message_length);
+                    
                     Netconnection::Command* command = Utils::AMF0Decoder::DecodeCommand(
                         chunk.data, 
                         chunk.messageHeader.message_length);
                     session.pendingCommand = command;
-                    
-                    // Send window Acknowledgement size & set peer bandwith protocol control message.
-                    vector<char> windowAckSizeData = ProtocolControlMessage::vSetWindowAcknowledgementSize(session.Bandwidth);
-                    vector<char> setPeerBandwidth = ProtocolControlMessage::vSetPeerBandwidth(session.Bandwidth, ProtocolControlMessage::PeerBandwithLimitType::Hard);
-                    status += SendChunk(windowAckSizeData.data(), windowAckSizeData.size(), session, ProtocolControlMessage::WindowAcknowledgementSize);
-                    status += SendChunk(setPeerBandwidth.data(), setPeerBandwidth.size(), session, ProtocolControlMessage::SetPeerBandwidth);
                     
                     status += HandleCommandMessage(command, session);
 
