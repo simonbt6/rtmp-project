@@ -85,7 +85,7 @@ namespace Utils
 
                 data.data[0] = AMF0::type_markers::number_marker;
 
-                int* numberData = Utils::Math::DoubleToIEEE754(value);
+                char* numberData = Utils::Math::DoubleToIEEE754(value);
                 for (int i = 0; i < data.size - 1; i++)
                     data.data[i + 1] = numberData[i];
 
