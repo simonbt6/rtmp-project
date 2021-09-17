@@ -4,7 +4,6 @@
  * Date: 2021-08-08
  **/
 
-#define _HAS_STD_BYTE 0
 #define WIN32_LEAN_AND_MEAN
 
 
