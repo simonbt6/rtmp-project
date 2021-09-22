@@ -51,7 +51,7 @@ namespace RTMP
 
         public:
             static int ParseData(vector<unsigned char>& data, Session& session);
-            static int ParseChunk(vector<unsigned char>& data, Session& session);
+            // static int ParseChunk(vector<unsigned char>& data, Session& session);
             static int ParseChunks(vector<unsigned char>& data, Session& session);
     };
 }
