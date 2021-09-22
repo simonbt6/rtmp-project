@@ -60,6 +60,7 @@ namespace Utils
 
             static char* DoubleToIEEE754(double value)
             {
+                if (value == 0) return new char[8]{0, 0, 0, 0,  0, 0, 0, 0};
                 Utils::FormatedPrint::PrintFormated(
                     "Math::DoubleToIEEE754",
                     "Double value: " + to_string((int)value)
