@@ -9,6 +9,7 @@
  */
 
 #include <vector>
+#include <string>
 
 #include "RTMPMessage.hpp"
 #include "RTMPSession.hpp"
@@ -24,12 +25,13 @@ namespace RTMP
 {
     class ServerResponse
     {
+
         public:
             // Protocol control messages.
             static vector<char> ConnectResponse(Session&);
             static vector<char> CallResponse(Session&);
             static vector<char> CreateStreamResponse(Session&);
-            static vector<char> PublishResponse(Session&);
+            static vector<char> OnStatus(Session&, int level, string code, string description = "");
 
             // User Control messages.
             static vector<char> StreamBegin(Session&); 
