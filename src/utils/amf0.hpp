@@ -411,9 +411,11 @@ namespace Utils
 
                 Object object;    
 
+                int endMarkerIndex = FindIndex(bytes, size, AMF0::type_markers::object_end_marker) - 2;
+
                 Utils::FormatedPrint::PrintBytes<unsigned char>(bytes, size);            
 
-                while (lastIndex < size -1)
+                while (lastIndex < size - 1 && lastIndex != endMarkerIndex)
                 {
                     if (lastIndex > 0) lastIndex--;
                     
