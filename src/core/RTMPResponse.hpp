@@ -25,8 +25,13 @@ namespace RTMP
     class ServerResponse
     {
         public:
+            // Protocol control messages.
             static vector<char> ConnectResponse(Session&);
             static vector<char> CallResponse(Session&);
             static vector<char> CreateStreamResponse(Session&);
+            static vector<char> PublishResponse(Session&);
+
+            // User Control messages.
+            static vector<char> StreamBegin(Session&); 
     };
 }

@@ -228,6 +228,23 @@ namespace RTMP
         }
         else if (Netconnection::CreateStream* cmd = dynamic_cast<Netconnection::CreateStream*>(command))
         {
+            vector<char> data;
+            Utils::FormatedPrint::PrintFormated(
+                "Handler::HandleCommandMessage", 
+                "Handling response for create stream command message."
+            );
+
+            /**
+             * @brief 
+             * createStream response -> _result
+             * UserControl -> StreamBegin
+             * 
+             */
+            data = RTMP::ServerResponse::StreamBegin(session);
+            status += SendChunk(data.data(), data.size(), session, 0x04);
+
+            data = RTMP::ServerResponse::PublishResponse(session);
+            status += SendChunk(data.data(), data.size(), session, 0x14);
             
         }
         else if (Netconnection::CreateStreamResponse* cmd = dynamic_cast<Netconnection::CreateStreamResponse*>(command))
@@ -283,6 +300,11 @@ namespace RTMP
                 "Handler::HandleCommandMessage",
                 "FCPublish command message."
             );
+            /**
+             * @brief 
+             * publish response -> _result
+             * 
+             */
         }
         else 
         {
@@ -404,10 +426,16 @@ namespace RTMP
                 };
                 case ProtocolControlMessage::Type::Acknowledgement:
                 {
-                    int receivedData = session.totalBytes;
+                    // int receivedData = session.totalBytes;
+                    int seqnumber = 0;
+                    Utils::BitOperations::bytesToInteger(
+                        seqnumber, 
+                        session.lastChunk->data, 
+                        false, 
+                        chunk.messageHeader.message_length);
                     Utils::FormatedPrint::PrintFormated(
                         "Handler::HandleChunk", 
-                        "Protocol control message: Acknowledgement.");
+                        "Protocol control message: Acknowledgement. Sequence number -> " + to_string(seqnumber));
                     break;
                 };
                 case ProtocolControlMessage::Type::WindowAcknowledgementSize:
