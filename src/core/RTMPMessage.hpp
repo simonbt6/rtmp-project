@@ -9,20 +9,39 @@ using namespace std;
 
 namespace RTMP
 {
+    struct UserControlMessage
+    {
+        enum class EventType
+        {
+            StreamBegin         = 0,
+
+            StreamEOF           = 1,
+
+            StreamDry           = 2,
+
+            SetBufferLength     = 3,
+
+            StreamIsRecorded    = 4,
+
+            PingRequest         = 6,
+
+            PingResponse        = 7,
+        };
+    };
 
     struct ProtocolControlMessage
     {
         enum Type
         {
-            SetChunkSize = 0x01,
+            SetChunkSize                = 0x01,
             
-            Abort = 0x02,
+            Abort                       = 0x02,
 
-            Acknowledgement = 0x03,
+            Acknowledgement             = 0x03,
             
-            WindowAcknowledgementSize = 0x05,
+            WindowAcknowledgementSize   = 0x05,
 
-            SetPeerBandwidth = 0x06,
+            SetPeerBandwidth            = 0x06,
         };
 
         enum class PeerBandwithLimitType
@@ -68,17 +87,17 @@ namespace RTMP
              * The client or the server sends this message to send audio
              * data to the peer.
              **/
-            AudioMessage = 0x08,
+            AudioMessage            = 0x08,
             /**
              * The client or the server sends this message to send video
              * data to the peer.
              **/             
-            VideoMessage = 0x09,
+            VideoMessage            = 0x09,
             /**
              * An aggregate message is a single message that contains a 
              * series of RTMP sub-messages using the format described in 6.1.
              **/             
-            AggregateMessage = 0x16,
+            AggregateMessage        = 0x16,
             /**
              * The client or the server sends this message to notify the peer
              * about the user control events. Section 6.2.
@@ -89,16 +108,20 @@ namespace RTMP
             /**
              * AMF0 Encoding
              **/
-            AMF0CommandMessage = 0x14,
-            AMF0DataMessage = 0x12,
+            AMF0CommandMessage      = 0x14,
+
+            AMF0DataMessage         = 0x12,
+
             AMF0SharedObjectMessage = 0x13,
             
             /**
              * AMF3 Encoding
              **/
-            AMF3DataMessage = 0x0D,
+            AMF3DataMessage         = 0x0D,
+
             AMF3SharedObjectMessage = 0x0E,
-            AMF3CommandMessage = 0x0F,
+
+            AMF3CommandMessage      = 0x0F,
         };
 
         enum UserControlMessageEventsTypes
@@ -110,6 +133,7 @@ namespace RTMP
              * Size: 4 bytes
              **/
             StreamBegin = 0x00,
+
             /** 
              * The server sends this event to notify the client
              * that the playback of data is over as requested
@@ -119,6 +143,7 @@ namespace RTMP
              * Size: 4 bytes
              **/
             StreamEOF = 0x01,
+
             /**
              * The server sends this event to notify the client
              * that there is no more data on the stream. If the server
@@ -127,6 +152,7 @@ namespace RTMP
              * Size: 4 bytes
              **/
             StreamDry = 0x02,
+            
             /**
              * The client sends this event to inform the server
              * of the buffer size (in ms) that is used to buffer 
