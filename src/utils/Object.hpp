@@ -44,7 +44,7 @@ namespace Utils
     {
         app,
         flashver,
-        swtUrl,
+        swfUrl,
         tcUrl,
         fpad,
         audioCodecs,
@@ -65,7 +65,7 @@ namespace Utils
     static inline map<std::string, PropertyType> PropertyTypeLinker = {
         {"app", PropertyType::app},
         {"flashVer", PropertyType::flashver},
-        {"swtUrl", PropertyType::swtUrl},
+        {"swfUrl", PropertyType::swfUrl},
         {"tcUrl", PropertyType::tcUrl},
         {"fpad", PropertyType::fpad},
         {"audioCodecs", PropertyType::audioCodecs},
@@ -85,7 +85,7 @@ namespace Utils
     static inline map<PropertyType, std::string> PropertyNameLinker = {
         {PropertyType::app, "app"},
         {PropertyType::flashver, "flashVer"},
-        {PropertyType::swtUrl, "swtUrl"},
+        {PropertyType::swfUrl, "swfUrl"},
         {PropertyType::tcUrl, "tcUrl"},
         {PropertyType::fpad, "fpad"},
         {PropertyType::audioCodecs, "audioCodecs"},
