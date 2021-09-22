@@ -59,7 +59,9 @@ namespace Utils
         capabilities,
         status,
         code,
-        description
+        description,
+        level,
+
     };
 
     static inline map<std::string, PropertyType> PropertyTypeLinker = {
@@ -79,7 +81,8 @@ namespace Utils
         {"capabilities", PropertyType::capabilities},
         {"status", PropertyType::status},
         {"code", PropertyType::code},
-        {"description", PropertyType::description}
+        {"description", PropertyType::description},
+        {"level", PropertyType::level}
     };
 
     static inline map<PropertyType, std::string> PropertyNameLinker = {
@@ -99,7 +102,8 @@ namespace Utils
         {PropertyType::capabilities, "capabilities"},
         {PropertyType::status, "status"},
         {PropertyType::code, "code"},
-        {PropertyType::description, "description"}
+        {PropertyType::description, "description"},
+        {PropertyType::level, "level"},
     };
         
     typedef map<PropertyType, Property*> Object;
