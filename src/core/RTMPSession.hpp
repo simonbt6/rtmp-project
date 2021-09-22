@@ -43,6 +43,8 @@ namespace RTMP
          **/
         SOCKET socket = INVALID_SOCKET;
 
+        int streamID = 0;
+
         int timestamps = 0;
 
         int Bandwidth = 4096;
