@@ -94,10 +94,10 @@ namespace RTMP
 
                 message_type_id[0] = chunk.messageHeader.message_type_id;
 
-                message_stream_id[0] = (chunk.messageHeader.message_stream_id >> 24);
-                message_stream_id[1] = (chunk.messageHeader.message_stream_id >> 16);
-                message_stream_id[2] = (chunk.messageHeader.message_stream_id >> 8) & 0xFF;
-                message_stream_id[3] = (chunk.messageHeader.message_stream_id & 0xFF);
+                message_stream_id[3] = (chunk.messageHeader.message_stream_id >> 24);
+                message_stream_id[2] = (chunk.messageHeader.message_stream_id >> 16);
+                message_stream_id[1] = (chunk.messageHeader.message_stream_id >> 8) & 0xFF;
+                message_stream_id[0] = (chunk.messageHeader.message_stream_id & 0xFF);
 
                 data.insert(data.end(), timestamp, timestamp + 3);
                 data.insert(data.end(), message_length, message_length + 3);
@@ -237,14 +237,12 @@ namespace RTMP
             /**
              * @brief 
              * createStream response -> _result
-             * UserControl -> StreamBegin
              * 
              */
-            data = RTMP::ServerResponse::StreamBegin(session);
-            status += SendChunk(data.data(), data.size(), session, 0x04);
 
-            data = RTMP::ServerResponse::PublishResponse(session);
+            data = RTMP::ServerResponse::CreateStreamResponse(session);
             status += SendChunk(data.data(), data.size(), session, 0x14);
+            
             
         }
         else if (Netconnection::CreateStreamResponse* cmd = dynamic_cast<Netconnection::CreateStreamResponse*>(command))
@@ -277,7 +275,16 @@ namespace RTMP
         }
         else if (Netconnection::Publish* cmd = dynamic_cast<Netconnection::Publish*>(command))
         {
-            
+            vector<char> data;
+            Utils::FormatedPrint::PrintFormated(
+                "Handler::HandleCommandMessage",
+                "Publish command message."
+            );
+            data = RTMP::ServerResponse::StreamBegin(session);
+            status += SendChunk(data.data(), data.size(), session, 0x04);
+
+            data = RTMP::ServerResponse::OnStatus(session, 0, "NetStream.Publish.Start", "Starting the stream.");
+            status += SendChunk(data.data(), data.size(), session, 0x14);
         }
         else if (Netconnection::Seek* cmd = dynamic_cast<Netconnection::Seek*>(command))
         {
@@ -296,6 +303,7 @@ namespace RTMP
         }
         else if (Netconnection::FCPublish* cmd = dynamic_cast<Netconnection::FCPublish*>(command))
         {
+            vector<char> data;
             Utils::FormatedPrint::PrintFormated(
                 "Handler::HandleCommandMessage",
                 "FCPublish command message."
@@ -305,6 +313,7 @@ namespace RTMP
              * publish response -> _result
              * 
              */
+
         }
         else 
         {
