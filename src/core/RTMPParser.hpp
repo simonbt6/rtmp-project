@@ -10,9 +10,10 @@
 #include "RTMPHandshake.hpp"
 #include "RTMPMessage.hpp"
 #include "RTMPChunk.hpp"
-#include "../utils/Bit.hpp"
-#include "../utils/FormatedPrint.hpp"
-#include "../utils/amf0.hpp"
+
+#include <Bit.hpp>
+#include <FormatedPrint.hpp>
+#include <amf0.hpp>
 
 #include <iostream>
 #include <vector>
