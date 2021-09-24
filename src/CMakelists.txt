@@ -1,0 +1,19 @@
+cmake_minimum_required(VERSION 3.20)
+
+project(rtmp_lib)
+
+set (rtmp_core_libs
+    "core/RTMPHandler.cpp"
+    "core/RTMPMessage.cpp"
+    "core/RTMPParser.cpp"
+    "core/RTMPResponse.cpp"
+    "codecs/VideoCodecs.cpp"
+)
+
+set (rtmp_codecs_libs
+)
+
+set (includes "../includes/")
+
+add_library(rtmp_lib ${rtmp_core_libs} ${rtmp_codecs_lib})
+target_include_directories(rtmp_lib PUBLIC core/ utils/ codecs/ ${includes} ${includes}/ffmpeg)

@@ -11,22 +11,24 @@ if (MSVC_VERSION GREATER_EQUAL "1900")
     endif()
 endif()
 
-# Source files
-set(SOURCE 
-    test/win32_server.cpp
-    src/core/RTMPMessage.cpp
-    src/core/RTMPResponse.cpp
-    src/core/RTMPParser.cpp
-    src/core/RTMPHandler.cpp
+add_subdirectory(src)
+add_subdirectory(libs)
+
+set (LIBS_DIRECTORY "libs/")
+set (LIBS
+    "ffmpeg/avcodec"
+    "ffmpeg/avformat"
 )
 
-set (TEST_SOURCE
-    test/debug/test_handshake.cpp
-    src/core/RTMPMessage.cpp
-    src/core/RTMPResponse.cpp
-    src/core/RTMPParser.cpp
-    src/core/RTMPHandler.cpp
-)
+add_executable(server test/win32_server.cpp)
+add_executable(decoder test/test_decoder.cpp)
 
-add_executable(server ${SOURCE})
-add_executable(test_handshake ${TEST_SOURCE})
+target_include_directories(decoder PUBLIC "src/core/" "src/utils/" "src/codecs" "includes/")
+target_link_libraries(decoder libs)
+target_link_libraries(decoder rtmp_lib)
+
+target_include_directories(server PUBLIC "includes/")
+target_include_directories(server PUBLIC "src/utils/")
+target_include_directories(server PUBLIC "C:/ffmpeg/ffmpeg-2021-09-15-0-lgpl21-x64-windows-static/installed/x64-windows-static/include/")
+target_link_libraries(server libs)
+target_link_libraries(server rtmp_lib)
