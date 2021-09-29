@@ -11,13 +11,13 @@ if (MSVC_VERSION GREATER_EQUAL "1900")
     endif()
 endif()
 
-add_subdirectory(src)
 add_subdirectory(libs)
+add_subdirectory(src)
 
 add_executable(server test/win32_server.cpp)
 add_executable(decoder test/test_decoder.cpp)
 
-target_include_directories(decoder PUBLIC "src/core/" "src/utils/" "src/codecs" "includes/")
+target_include_directories(decoder PUBLIC "src/core/" "src/graphics/" "src/utils/" "src/codecs" "includes/")
 target_link_libraries(decoder libs)
 target_link_libraries(decoder rtmp_lib)
 
