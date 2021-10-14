@@ -14,7 +14,7 @@ namespace Graphics
         template <typename IntegerType>
         class vec4
         {
-            private:
+            protected:
                 IntegerType m_X;
                 IntegerType m_Y;
                 IntegerType m_Z;
@@ -22,7 +22,7 @@ namespace Graphics
 
             public:
                 vec4(IntegerType x = 0, IntegerType y = 0, IntegerType z = 0, IntegerType w = 0): m_X(x), m_Y(y), m_Z(z), m_W(w){};
-                ~vec4();
+                ~vec4(){};
 
                 // Getters and setters.
                 inline IntegerType GetX() const{ return m_X; }
