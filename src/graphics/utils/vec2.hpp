@@ -72,10 +72,10 @@ namespace Graphics
                 inline bool operator!=(const vec2<IntegerType>& other) const{ return (this->IsNotEqualTo(other)); }
                
                 inline bool operator> (const vec2<IntegerType>& other) const{ return (this->IsGreaterThan(other)); }
-                inline bool operator>=(const vec2<IntegerType>& other) const{ return (this->IsGreaterOrEqualTo(other); }
+                inline bool operator>=(const vec2<IntegerType>& other) const{ return (this->IsGreaterOrEqualTo(other)); }
 
                 inline bool operator< (const vec2<IntegerType>& other) const{ return (this->IsLessThan(other)); }
-                inline bool operator<=(const vec2<IntegerType>& other) const{ return (this->IsLessOrEqualTo(other); }
+                inline bool operator<=(const vec2<IntegerType>& other) const{ return (this->IsLessOrEqualTo(other)); }
 
         };
     };
