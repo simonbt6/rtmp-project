@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 project(libs)
 
 set (LIBS
+    # FFmpeg
     "../libs/ffmpeg/libavcodecd"
     "../libs/ffmpeg/libavdeviced"
     "../libs/ffmpeg/libavfilterd"
@@ -13,5 +14,14 @@ set (LIBS
     "../libs/ffmpeg/libswscaled"
 )
 
+add_subdirectory(glfw)
+add_subdirectory(glad)
+
+
 add_library(libs INTERFACE)
+
+target_include_directories(libs INTERFACE)
+
 target_link_libraries(libs INTERFACE ${LIBS})
+target_link_libraries(libs INTERFACE glfw)
+target_link_libraries(libs INTERFACE glad)
