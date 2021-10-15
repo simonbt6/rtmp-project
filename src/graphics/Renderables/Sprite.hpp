@@ -6,12 +6,12 @@
  * 
  */
 
-#include "../IRenderable2D.hpp"
-#include "../utils/vec2.hpp"
-#include "../utils/vec3.hpp"
-#include "../utils/vec4.hpp"
-#include "../utils/color.hpp"
-#include "../utils/rectangle.hpp"
+#include <IRenderable2D.hpp>
+#include <utils/vec2.hpp>
+#include <utils/vec3.hpp>
+#include <utils/vec4.hpp>
+#include <utils/color.hpp>
+#include <utils/rectangle.hpp>
 
 namespace Graphics
 {
@@ -20,7 +20,8 @@ namespace Graphics
         class Sprite: public IRenderable2D
         {
             public:
-                Sprite(const Maths::vec2<float>& position, const Maths::vec2<float>& size, const Color& color)
+            
+                Sprite(const Maths::vec2<float>& position, const Maths::vec2<float>& size, const Maths::Color& color)
                 :IRenderable2D(position, size, color)
                 {
                     const Maths::vec2<float>& p = m_Bounds.GetPosition();

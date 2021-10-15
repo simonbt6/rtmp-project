@@ -1,4 +1,4 @@
-?#pragma once
+#pragma once
 
 /**
  * @author Simon Brisebois-Therrien
@@ -9,23 +9,23 @@
 
 #include <glad/gl.h>
 
-#include "Shader.hpp"
-#include "Texture.hpp"
-#include "VertexArray.hpp"
-#include "VertexBuffer.hpp"
-#include "VertexBufferLayout.hpp"
-#include "IndexBuffer.hpp"
+#include <Shader.hpp>
+#include <Texture.hpp>
+#include <VertexArray.hpp>
+#include <VertexBuffer.hpp>
+#include <VertexBufferLayout.hpp>
+#include <IndexBuffer.hpp>
 
-#include "IRenderable2D.hpp"
+#include <IRenderable2D.hpp>
 
-#include "utils/vec2.hpp"
-#include "utils/vec3.hpp"
-#include "utils/vec4.hpp"
-#include "utils/color.hpp"
-#include "utils/rectangle.hpp"
+#include <utils/vec2.hpp>
+#include <utils/vec3.hpp>
+#include <utils/vec4.hpp>
+#include <utils/color.hpp>
+#include <utils/rectangle.hpp>
 
 #include <FileManager.hpp>
-#include <FormatedPrint.hpp>
+// #include <FormatedPrint.hpp>
 
 #include <map>
 #include <string>
@@ -51,10 +51,10 @@ namespace Graphics
             void Draw(const IndexBuffer& ibo, const Shader& shader);
             void Draw(const IRenderable2D& renderable);
             
-            void DrawRect(const Maths::Rectangle& rectangle, const Color& color);
+            void DrawRect(const Maths::Rectangle& rectangle, const Maths::Color& color);
             void DrawRect(float width, float height, Maths::vec4<float> color);
 
-            void DrawLine(const Maths::vec2<float>& v1, const Maths::vec2<float>& v2, float thickness, const Color& color);
+            void DrawLine(const Maths::vec2<float>& v1, const Maths::vec2<float>& v2, float thickness, const Maths::Color& color);
 
             void DrawQuad(Maths::vec4<Maths::vec2<float>> positions, Maths::vec4<float> color);
 

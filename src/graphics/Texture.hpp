@@ -19,7 +19,6 @@
 // Utils
 #include <FormatedPrint.hpp>
 #include <FileManager.hpp>
-#include <Memory.hpp>
 
 namespace Graphics
 {

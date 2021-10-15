@@ -54,7 +54,7 @@ namespace Graphics
         
     }
 
-    void Renderer2D::DrawRect(const Maths::Rectangle& rectangle, const Color& color)
+    void Renderer2D::DrawRect(const Maths::Rectangle& rectangle, const Maths::Color& color)
     {
         const Maths::vec2<float>& position = rectangle.GetPosition();
         const Maths::vec2<float>& size = rectangle.GetSize();

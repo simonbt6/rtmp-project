@@ -20,6 +20,7 @@
 #include <inttypes.h>
 
 #include <FileManager.hpp>
+#include <FormatedPrint.hpp>
 
 namespace Graphics
 {

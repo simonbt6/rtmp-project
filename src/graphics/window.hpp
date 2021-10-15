@@ -26,7 +26,6 @@
 #include <stack>
 
 #include <FileManager.hpp>
-#include <Memory.hpp>
 
 namespace Graphics
 {

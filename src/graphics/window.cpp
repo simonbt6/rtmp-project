@@ -53,7 +53,7 @@ namespace Graphics
 
         Maths::vec2<float> pos(0.5f, -0.5f);
         Maths::vec2<float> size(0.5f, 0.5f);
-        Color              color(0.0f, 1.0f, 0.0f, 1.0f);
+        Maths::Color              color(0.0f, 1.0f, 0.0f, 1.0f);
 
         Primitives::Sprite sprite(pos, size, color);
 
