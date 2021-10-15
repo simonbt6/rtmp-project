@@ -2,7 +2,7 @@
 
 namespace Graphics
 {
-    IndexBuffer::IndexBuffer(const uint32_t* data, uint32_t count)
+    IndexBuffer::IndexBuffer(const uint32_t* data, uint32_t count): m_Count(count)
     {
         glGenBuffers(1, &m_RenderID);
         glBindBuffer(GL_ARRAY_BUFFER, m_RenderID);
@@ -16,7 +16,7 @@ namespace Graphics
 
     void IndexBuffer::Bind() const
     {
-        glBindBuffer(GL_ARRAY_BUFFER, m_RenderID);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RenderID);
     }
 
     void IndexBuffer::Unbind() const

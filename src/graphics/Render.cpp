@@ -3,12 +3,31 @@
 namespace Graphics
 {
 
+    void Render::Clear() const
+    {
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
+
+    void Render::Draw(const VertexArray& vao, const IndexBuffer& ibo, const Shader& shader) const
+    {
+        shader.Bind();
+        vao.Bind();
+        ibo.Bind();
+
+        glDrawElements(GL_TRIANGLES, ibo.GetCount(), GL_UNSIGNED_INT, nullptr);
+
+        shader.Unbind();
+        vao.Unbind();
+        ibo.Unbind();
+    }
+
+
+
     void Render::DrawTriangle(float vertices[], char r, char g, char b)
     {
         Shader* shader = GetShader("triangle");
 
-        glBindBuffer(GL_ARRAY_BUFFER, m_Buffer);
-        glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), vertices, GL_STATIC_DRAW);
+        VertexBuffer vbo(vertices, 6 * sizeof(float));
 
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
@@ -38,14 +57,70 @@ namespace Graphics
         Shader* shader = GetShader("basic");
         shader->Bind();
         shader->SetUniform4f("color", r, g, b, 1.0f);
+
+        VertexBuffer vbo(rectangle_bounds_vertices, 8 * sizeof(float));
+
+        m_VAO.Bind();
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+
+        IndexBuffer ibo(rectangle_bounds_indices, 6);
+        
+
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, rectangle_bounds_indices);
+
+        shader->Unbind();
+        vbo.Unbind();
     }
 
     void Render::DrawFrame(uint8_t* bytes, int size, float width, float height)
     {
         float max = 0.5f;
         
-    
+        // Setup viewport
+        // DrawRectangle(width, height, 0, 0, 0);
         
+        float vertices[] = {
+            // Position          Tex Coords
+            -width, -height,     0.0f,  0.0f,
+             width, -height,     1.0f,  0.0f,
+             width,  height,     1.0f,  1.0f,
+            -width,  height,     0.0f,  1.0f,
+        };
+
+        uint32_t indices[] = {
+            0, 1, 2,
+            2, 3, 0
+        };
+        
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        VertexArray  vao;
+        VertexBuffer vbo(vertices, 4 * 4 * sizeof(float));
+
+        VertexBufferLayout layout;
+        layout.Push<float>(2);
+        layout.Push<float>(2);
+        vao.AddBuffer(vbo, layout);
+
+        IndexBuffer ibo(indices, 6);
+
+        Shader* shader = GetShader("texture");
+        shader->Bind();
+
+        Texture texture("mat.jpg");
+        texture.Bind();
+        shader->SetUniform1i("u_Texture", 0);
+
+        vao.Unbind();
+        vbo.Unbind();
+        ibo.Unbind();
+        shader->Unbind();
+
+        texture.Bind();
+        Draw(vao, ibo, *shader);
+
 
     }
 

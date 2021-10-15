@@ -10,12 +10,15 @@
 #include "Texture.hpp"
 #include "Shader.hpp"
 #include "VertexBuffer.hpp"
+#include "VertexArray.hpp"
 #include "IndexBuffer.hpp"
+
+#include "utils/vec2.hpp"
+#include "utils/vec4.hpp"
 
 #include <iostream>
 #include <linmath.h>
 #include <map>
-#include "utils/vec2.hpp"
 
 
 namespace Graphics
@@ -25,8 +28,7 @@ namespace Graphics
         private:
             GLFWwindow* m_Window;
 
-            uint32_t m_VAO;
-            uint32_t m_Buffer;
+            VertexArray m_VAO;
 
             std::map<std::string, Shader*> m_Shaders;
 
@@ -41,15 +43,16 @@ namespace Graphics
 
                 this->LoadShaders();
                 
-
-                glGenBuffers(1, &m_Buffer);
-                glBindBuffer(GL_ARRAY_BUFFER, m_Buffer);
             }
             typedef struct
             {
                 float x, y;
                 float r, g, b;
             } Vertice;
+
+            void Clear() const;
+
+            void Draw(const VertexArray& vao, const IndexBuffer& ibo, const Shader& shader) const;
 
             void DrawTriangle(float vertices[], char r, char g, char b);
 

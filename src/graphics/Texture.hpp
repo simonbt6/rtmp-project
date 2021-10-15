@@ -34,6 +34,7 @@ namespace Graphics
 
         public:
             Texture(const std::string& path);
+            Texture(uint8_t* bytes, uint32_t size);
             ~Texture();
 
 

@@ -20,11 +20,13 @@ namespace Graphics
 
             public:
                 vec2(IntegerType x = 0, IntegerType y = 0): m_X(x), m_Y(y){};
-                ~vec2();
+                ~vec2(){}
 
                 // Getters and setters.
                 inline IntegerType GetX() const{ return m_X; }
                 inline IntegerType GetY() const{ return m_Y; }
+
+                inline IntegerType* AsArray() const{ return new IntegerType[2]{ m_X, m_Y }; }
 
                 inline void SetX(IntegerType value) { m_X = value; }
                 inline void SetY(IntegerType value) { m_Y = value; }

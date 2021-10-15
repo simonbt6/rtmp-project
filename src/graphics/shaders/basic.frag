@@ -1,9 +1,10 @@
 #version 450
 
-out vec4 outColor;
-uniform vec4 color;
+out vec4 FragColor;
+
+in vec4 vertexColor;
 
 void main()
 {
-    outColor = color;
+    FragColor = vertexColor;;
 }

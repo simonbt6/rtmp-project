@@ -9,6 +9,10 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
+#include "utils/vec2.hpp"
+#include "utils/vec3.hpp"
+#include "utils/vec4.hpp"
+
 #include <iostream>
 #include <string>
 #include <unordered_map>
@@ -45,8 +49,51 @@ namespace Graphics
             void Bind() const;
             void Unbind() const;
 
+            /**
+             * UNIFORM 1
+             * 
+             */
+            // Float
             void SetUniform1f(const std::string& name, float v0);
+
+            // Int32
+            void SetUniform1i(const std::string& name, int32_t v0);
+            
+            /**
+             * UNIFORM 2
+             * 
+             */
+            // Float
+            void SetUniform2f(const std::string& name, Maths::vec2<float> v);
+            void SetUniform2f(const std::string& name, float v0, float v1);
+
+            // Int32
+            void SetUniform2i(const std::string& name, Maths::vec2<int32_t> v);
+            void SetUniform2i(const std::string& name, int32_t v0, int32_t v1);
+
+            /**
+             * UNIFORM 3
+             * 
+             */
+            // Float
+            void SetUniform3f(const std::string& name, Maths::vec3<float> v);
+            void SetUniform3f(const std::string& name, float v0, float v1, float v2);
+
+            // Int32
+            void SetUniform3i(const std::string& name, Maths::vec3<int32_t> v);
+            void SetUniform3i(const std::string& name, int32_t v0, int32_t v1, int32_t v2);
+            
+            /**
+             * UNIFORM 4
+             * 
+             */
+            // Float
+            void SetUniform4f(const std::string& name, Maths::vec4<float> v);
             void SetUniform4f(const std::string& name, float v0, float v1, float v2, float v3);
+
+            // Int32
+            void SetUniform4i(const std::string& name, Maths::vec4<int32_t> v);
+            void SetUniform4i(const std::string& name, int32_t v0, int32_t v1, int32_t v2, int32_t v3);
 
 
             std::string GetFilepath() { return s_FolderPath + m_Name; };

@@ -21,7 +21,7 @@ namespace Graphics
 
             public:
                 vec3(IntegerType x = 0, IntegerType y = 0, IntegerType z = 0): m_X(x), m_Y(y), m_Z(z){};
-                ~vec3();
+                ~vec3(){}
 
                 // Getters and setters.
                 inline IntegerType GetX() const{ return m_X; }

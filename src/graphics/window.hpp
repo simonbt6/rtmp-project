@@ -10,9 +10,20 @@
 
 #include "WindowCallbacks.hpp"
 #include "Render.hpp"
+#include "Renderer2D.hpp"
+#include "Texture.hpp"
+
+#include "utils/vec2.hpp"
+#include "utils/vec3.hpp"
+#include "utils/vec4.hpp"
+#include "utils/color.hpp"
+#include "utils/rectangle.hpp"
+
+#include "Renderables/Sprite.hpp"
 
 #include <linmath.h>
 #include <iostream>
+#include <stack>
 
 #include <FileManager.hpp>
 #include <Memory.hpp>
@@ -25,6 +36,7 @@ namespace Graphics
             GLFWwindow *m_Window;
 
             Render* m_Render;
+            Renderer2D* m_Renderer2D;
 
             std::vector<uint8_t>* frame_data;
 
