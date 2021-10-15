@@ -1,11 +1,9 @@
 
 #include <VideoCodecs.hpp>
-#include <StreamDecoder.hpp>
 
 #include <Window.hpp>
 
 #include <FileManager.hpp>
-#include <Memory.hpp>
 
 #include <vector>
 #include <iostream>
@@ -42,7 +40,7 @@ std::vector<unsigned char>* read(string path)
 int main()
 {
     Codecs::VideoDecoder* video_decoder = new Codecs::VideoDecoder();
-    Codecs::StreamDecoder* stream_decoder = new Codecs::StreamDecoder(AVCodecID::AV_CODEC_ID_H264);
+    // Codecs::StreamDecoder* stream_decoder = new Codecs::StreamDecoder(AVCodecID::AV_CODEC_ID_H264);
 
     std::vector<uint8_t>* data = read("data/videodata.bin");
     
