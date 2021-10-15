@@ -10,8 +10,12 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <iterator>
 #include <vector>
 #include <string>
+#include <inttypes.h>
+
+#include "Memory.hpp"
 
 namespace Utils 
 {
@@ -23,6 +27,8 @@ namespace Utils
             static std::string ReadStringFromFile(std::string filename);
 
             static std::vector<unsigned char>* ReadBytesFromFile(std::string filename);
+
+            static std::vector<uint8_t>* ReadBinaryFile(std::string filename);
 
 
     };

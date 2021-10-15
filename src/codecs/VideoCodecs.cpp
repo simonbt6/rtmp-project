@@ -2,11 +2,14 @@
 
 namespace Codecs
 {
+    static void save_gray_frame(unsigned char *buf, int wrap, int xsize, int ysize, char *filename);
+
+
     VideoDecoder::VideoDecoder()
     {
-        printf("\nInitializing video decoder...");
-    }
 
+    }
+    
     void VideoDecoder::DecodeVideoData(std::string filename, const std::vector<uint8_t>* data)
     {
         AVFormatContext* av_format_ctx = avformat_alloc_context();
@@ -120,6 +123,8 @@ namespace Codecs
                     " [AVPacket] pts: " + std::to_string(p_packet->pts)
                 );
 
+                this->DecodePacket(p_packet, p_codec_ctx, p_frame);
+
                 if (response < 0)
                     break;
 
@@ -139,5 +144,74 @@ namespace Codecs
         av_frame_free(&p_frame);
         avcodec_free_context(&p_codec_ctx);
 
+    }
+
+    void VideoDecoder::DecodePacket(AVPacket* packet, AVCodecContext* av_codec_ctx, AVFrame* frame)
+    {
+        // save_to_file(packet->data, packet->size, av_codec_ctx->frame_number);
+        int response = avcodec_send_packet(av_codec_ctx, packet);
+
+        if (response < 0)
+            throw std::runtime_error("Error while sending a packet to the decoder.");
+        
+        while (response >= 0)
+        {
+            response = avcodec_receive_frame(av_codec_ctx, frame);
+
+            if (response == AVERROR(EAGAIN) || response == AVERROR_EOF)
+                break;
+            else if (response < 0)
+                throw std::runtime_error("Error while receiving a frame from the decoder.");
+            
+            if (response >= 0)
+            {
+                string frame_info = "Frame description: \n";
+                    frame_info.append("\tType: " + std::to_string(av_codec_ctx->frame_number) + ".\n");
+                    frame_info.append("\tSize: " + std::to_string(av_get_picture_type_char(frame->pict_type)) + " bytes.\n");
+                    frame_info.append("\tFormat: " + std::to_string(frame->pkt_size) + ".\n");
+                    frame_info.append("\tPts: " + std::to_string(frame->pts) + ".\n");
+                    frame_info.append("\tKey frame: " + std::to_string(frame->key_frame) + ".\n");
+                    frame_info.append("\tDTS: " + std::to_string(frame->coded_picture_number) + ".\n");
+                Utils::FormatedPrint::PrintFormated("VideoDecoder::DecodePacket", frame_info);
+            }
+
+            char frame_filename[1024];
+            snprintf(frame_filename, sizeof(frame_filename), "%s-%d.pgm", "frame", av_codec_ctx->frame_number);
+
+            if (frame->format != AV_PIX_FMT_YUV420P)
+                Utils::FormatedPrint::PrintInfo("Warning: The generated file may not be a grayscale image, but could e.g. be just the R component if the video format is RGB.");
+            
+            save_gray_frame(frame->data[0], frame->linesize[0], frame->width, frame->height, frame_filename);
+        }
+    }
+
+    void VideoDecoder::save_to_file(unsigned char* data, int size, int i)
+    {
+        const char* filename = "packet_" + (48 + i);
+        FILE* f = fopen(filename, "w");
+
+        for (int n = 0; n < size; n += 16)
+        {
+            if (n % 16 == 0 && n != 0) fprintf(f, "\n");
+            if (n % 8 == 0 && n != 0) fprintf(f, "   ");
+            fprintf(f, "%X ", data[n]);
+
+            if (data[n] < 0x10) fprintf(f, " ");
+        }
+    }
+
+    void VideoDecoder::save_gray_frame(unsigned char *buf, int wrap, int xsize, int ysize, char *filename)
+    {
+        FILE *f;
+        int i;
+        f = fopen(filename,"w");
+        // writing the minimal required header for a pgm file format
+        // portable graymap format -> https://en.wikipedia.org/wiki/Netpbm_format#PGM_example
+        fprintf(f, "P5\n%d %d\n%d\n", xsize, ysize, 255);
+
+        // writing line by line
+        for (i = 0; i < ysize; i++)
+            fwrite(buf + i * wrap, 1, xsize, f);
+        fclose(f);
     }
 }

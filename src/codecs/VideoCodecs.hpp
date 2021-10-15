@@ -25,12 +25,18 @@ namespace Codecs
             /** 
              * Class members.
              **/
-            
         public:
             VideoDecoder();
 
             void DecodeVideoData(std::string filename, const std::vector<uint8_t>* data);
 
+            void DecodePacket(AVPacket* packet, AVCodecContext* av_codec_ctx, AVFrame* frame);
+
         private:
+            static void save_gray_frame(unsigned char *buf, int wrap, int xsize, int ysize, char *filename);
+
+            static void save_to_file(unsigned char* data, int size, int i);
+
+
     };
 }
