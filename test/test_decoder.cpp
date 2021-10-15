@@ -7,6 +7,8 @@
 #include <sstream>
 #include <string>
 
+#include <window.hpp>
+
 
 // using namespace std;
 
@@ -41,7 +43,9 @@ int main()
     
     try
     {
-        video_decoder->DecodeVideoData("data/bunny_video.mp4", data);
+        Graphics::Window* window;
+        window->Initialize();
+        
     }
     catch(const std::exception& e)
     {

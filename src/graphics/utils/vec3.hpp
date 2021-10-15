@@ -90,6 +90,11 @@ namespace Graphics
                 inline bool operator< (const vec3<IntegerType>& other) const{ return (this->IsLessThan(other)); }
                 inline bool operator<=(const vec3<IntegerType>& other) const{ return (this->IsLessOrEqualTo(other)); }
 
+                inline IntegerType Magnitude() const{ return sqrt(GetX() * GetX() + GetY() * GetY() + GetZ() * GetZ()); }
+                inline vec3<IntegerType> Normalize() const{ return vec3 (GetX() / Magnitude(), GetY() / Magnitude(), GetZ() / Magnitude()); }
+                inline IntegerType Distance(const vec3<IntegerType>& other) const{ return sqrt(pow(GetX() - other.GetX(), 2) + pow(GetY() - other.GetY(), 2) + pow(GetZ() - other.GetZ(), 2)); }
+
+                //inline friend std::ostream& operator<<(std::ostream& stream, const vec3<IntegerType>& vector) { return stream << "vec3: (" << vector.GetX() << ", " << vector.GetY() << ", " << vector.GetZ() << ")."; }
         };
     };
 };

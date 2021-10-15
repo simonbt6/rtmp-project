@@ -7,7 +7,11 @@
  * 
  */
 
+#include <inttypes.h>
+
+#include "vec3.hpp"
 #include "vec4.hpp"
+#include "math_funcs.hpp"
 
 namespace Graphics
 {
@@ -32,20 +36,20 @@ namespace Graphics
 
                 static mat4 Identity();
 
-                inline mat4<IntegerType> Multiply   (const mat4<IntegerType>& other);
+                mat4<IntegerType>& Multiply   (const mat4<IntegerType>& other);
                 friend mat4<IntegerType> operator*(mat4<IntegerType> left, const mat4<IntegerType>& right);
                 mat4<IntegerType>& operator*=(const mat4<IntegerType>& other);
 
                 vec3<IntegerType> Multiply(const vec3<IntegerType>& other) const;
-                friend vec3<IntegerType> operator*(const mat4<IntegerType>& left, const vec3& right);
+                friend vec3<IntegerType> operator*(const mat4<IntegerType>& left, const vec3<IntegerType>& right);
 
                 vec4<IntegerType> Multiply(const vec4<IntegerType>& other) const;
-                friend vec4<IntegerType> operator*(const mat4<IntegerType>& left, const vec4& right);
+                friend vec4<IntegerType> operator*(const mat4<IntegerType>& left, const vec4<IntegerType>& right);
 
-                mat4& Invert();
+                mat4<IntegerType>& Invert();
 
-                vec4 GetColumn(int index) const;
-                void SetColumn(uint32_t index, const vec4& column);
+                vec4<IntegerType> GetColumn(int32_t index) const;
+                void SetColumn(uint32_t index, const vec4<IntegerType>& column);
                 inline vec3<IntegerType> GetPosition() const { return vec3<IntegerType>(GetColumn(3)); }
                 inline void SetPosition(const vec3<IntegerType>& position) { SetColumn(3, vec4(position, 1.0f)); }
 
@@ -61,7 +65,7 @@ namespace Graphics
 
                 static mat4<IntegerType> Transpose(const mat4<IntegerType>& matrix);
 
-                String ToString() const;
+                // String toString() const;
 
 
 

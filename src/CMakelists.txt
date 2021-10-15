@@ -8,12 +8,24 @@ set (rtmp_core_libs
     "core/RTMPParser.cpp"
     "core/RTMPResponse.cpp"
     "codecs/VideoCodecs.cpp"
+
+    "graphics/window.cpp"
+    "graphics/WindowCallbacks.cpp"
+    "graphics/Render.cpp"
+    "graphics/Renderer2D.cpp"
+    "graphics/Shader.cpp"
+    "graphics/Texture.cpp"
+    "graphics/VertexArray.cpp"
+    "graphics/VertexBuffer.cpp"
+    "graphics/IndexBuffer.cpp"
+    "graphics/utils/mat4.cpp"
 )
 
 set (rtmp_codecs_libs
 )
 
 set (includes "../includes/")
+set (libs "../libs/")
 
 add_library(rtmp_lib ${rtmp_core_libs} ${rtmp_codecs_lib})
-target_include_directories(rtmp_lib PUBLIC core/ utils/ codecs/ ${includes} ${includes}/ffmpeg)
+target_include_directories(rtmp_lib PUBLIC core/ utils/ codecs/ graphics/ ${includes} ${includes}/ffmpeg ${libs}glad/include ${libs}glfw/include)

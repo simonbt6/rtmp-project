@@ -13,5 +13,8 @@ set (LIBS
     "../libs/ffmpeg/libswscaled"
 )
 
-add_library(libs INTERFACE)
+add_subdirectory(glad)
+add_subdirectory(glfw)
+
+add_library(libs INTERFACE glad glfw)
 target_link_libraries(libs INTERFACE ${LIBS})
