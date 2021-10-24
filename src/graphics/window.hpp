@@ -12,12 +12,12 @@
 #include "Render.hpp"
 #include "Renderer2D.hpp"
 #include "Texture.hpp"
+#include "color.hpp"
 
-#include "utils/vec2.hpp"
-#include "utils/vec3.hpp"
-#include "utils/vec4.hpp"
-#include "utils/color.hpp"
-#include "utils/rectangle.hpp"
+#include <maths/vec2.hpp>
+#include <maths/vec3.hpp>
+#include <maths/vec4.hpp>
+#include <maths/rectangle.hpp>
 
 #include "Renderables/Sprite.hpp"
 
@@ -25,7 +25,7 @@
 #include <iostream>
 #include <stack>
 
-#include <FileManager.hpp>
+#include <utils/FileManager.hpp>
 
 namespace Graphics
 {
@@ -44,11 +44,12 @@ namespace Graphics
         public:
             void Initialize();
 
+            void Loop(void(* fn)(Graphics::Renderer2D&));
+
             Render* GetRender() const { return m_Render; }
 
-        private:
 
-            void Loop();
+        private:
             
             void CleanUp();
 

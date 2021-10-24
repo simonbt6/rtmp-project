@@ -10,7 +10,7 @@ namespace Codecs
 
     }
     
-    void VideoDecoder::DecodeVideoData(std::string filename, const std::vector<uint8_t>* data)
+    void VideoDecoder::DecodeVideoData(std::string filename, std::vector<Frame*>* data)
     {
         AVFormatContext* av_format_ctx = avformat_alloc_context();
         if (!av_format_ctx) 
@@ -114,7 +114,9 @@ namespace Codecs
         int response = 0;
         int packet_to_process = 8;
 
-        while (av_read_frame(av_format_ctx, p_packet) >= 0)
+        int number = 0;
+
+        while (int frame_number = av_read_frame(av_format_ctx, p_packet) >= 0)
         {
             if (p_packet->stream_index == video_stream_index)
             {
@@ -123,15 +125,15 @@ namespace Codecs
                     " [AVPacket] pts: " + std::to_string(p_packet->pts)
                 );
 
-                this->DecodePacket(p_packet, p_codec_ctx, p_frame);
+                this->DecodePacket(p_packet, p_codec_ctx, p_frame, data);
+                // this->SaveFrameAsJPEG(p_codec_ctx, p_frame, frame_number);
 
-                if (response < 0)
-                    break;
 
                 if (--packet_to_process <= 0)
                     break;
             }
             av_packet_unref(p_packet);
+            number++;
         }
 
         Utils::FormatedPrint::PrintFormated(
@@ -146,13 +148,13 @@ namespace Codecs
 
     }
 
-    void VideoDecoder::DecodePacket(AVPacket* packet, AVCodecContext* av_codec_ctx, AVFrame* frame)
+    void VideoDecoder::DecodePacket(AVPacket* packet, AVCodecContext* av_codec_ctx, AVFrame* frame, std::vector<Frame*>* data)
     {
         // save_to_file(packet->data, packet->size, av_codec_ctx->frame_number);
         int response = avcodec_send_packet(av_codec_ctx, packet);
 
         if (response < 0)
-            throw std::runtime_error("Error while sending a packet to the decoder.");
+            throw std::runtime_error("\nFailed to decode packet.");
         
         while (response >= 0)
         {
@@ -175,29 +177,76 @@ namespace Codecs
                 Utils::FormatedPrint::PrintFormated("VideoDecoder::DecodePacket", frame_info);
             }
 
-            char frame_filename[1024];
-            snprintf(frame_filename, sizeof(frame_filename), "%s-%d.pgm", "frame", av_codec_ctx->frame_number);
-
             if (frame->format != AV_PIX_FMT_YUV420P)
                 Utils::FormatedPrint::PrintInfo("Warning: The generated file may not be a grayscale image, but could e.g. be just the R component if the video format is RGB.");
             
-            save_gray_frame(frame->data[0], frame->linesize[0], frame->width, frame->height, frame_filename);
+            /**
+             * Push back to packet buffer 
+             * 
+             * 
+             */
+
+            data->push_back(GetFrameData(av_codec_ctx, frame));
+            // save_gray_frame(frame->data[0], frame->linesize[0], frame->width, frame->height, frame_filename);
         }
     }
 
-    void VideoDecoder::save_to_file(unsigned char* data, int size, int i)
+    VideoDecoder::Frame* VideoDecoder::GetFrameData(AVCodecContext* p_CodecContext, AVFrame* p_Frame)
     {
-        const char* filename = "packet_" + (48 + i);
-        FILE* f = fopen(filename, "w");
+        Frame* frame = new Frame();
 
-        for (int n = 0; n < size; n += 16)
-        {
-            if (n % 16 == 0 && n != 0) fprintf(f, "\n");
-            if (n % 8 == 0 && n != 0) fprintf(f, "   ");
-            fprintf(f, "%X ", data[n]);
+        SwsContext* sws_scaler_context = sws_getContext(p_Frame->width, p_Frame->height, p_CodecContext->pix_fmt,
+                                                        p_Frame->width, p_Frame->height, AV_PIX_FMT_RGB0,
+                                                        SWS_BILINEAR, NULL, NULL, NULL);
+        if (!sws_scaler_context) throw std::runtime_error("\nFailed to initialize sw scaler.");
 
-            if (data[n] < 0x10) fprintf(f, " ");
-        }
+        uint8_t* data    = new uint8_t[p_Frame->width * p_Frame->height * 4]; 
+        uint8_t* dest[4] = {data, NULL, NULL, NULL};
+        int dest_linesize[4] = {p_Frame->width * 4, 0, 0, 0};
+        sws_scale(sws_scaler_context, p_Frame->data, p_Frame->linesize, 0, p_Frame->height, dest, dest_linesize);
+        sws_freeContext(sws_scaler_context);
+
+        frame->data = data;
+        frame->width = p_Frame->width;
+        frame->height = p_Frame->height;
+        
+        return frame;
+        
+    }
+
+    void VideoDecoder::SaveFrameAsJPEG(AVCodecContext* p_CodecCtx, AVFrame* p_Frame, int FrameNo)
+    {
+        AVCodec* jpegCodec = avcodec_find_encoder(AV_CODEC_ID_JPEG2000);
+        if (!jpegCodec) throw std::runtime_error("\nFailed to load jpeg codec.");
+
+        AVCodecContext* jpegCtx = avcodec_alloc_context3(jpegCodec);
+        if (!jpegCtx) throw std::runtime_error("\nFailed to allocate jpeg context.");
+
+        jpegCtx->pix_fmt = p_CodecCtx->pix_fmt;
+        jpegCtx->width   = p_Frame->width;
+        jpegCtx->height  = p_Frame->height;
+        jpegCtx->time_base = p_CodecCtx->time_base;
+
+        if (avcodec_open2(jpegCtx, jpegCodec, NULL) < 0) throw std::runtime_error("\nFailed to open jpeg avcodec.");
+
+        FILE *JPEGFile;
+        char filename[256];
+
+        AVPacket packet = {.data = NULL, .size = 0};
+        av_init_packet(&packet);
+        int gotFrame;
+
+        if (avcodec_encode_video2(jpegCtx, &packet, p_Frame, &gotFrame) < 0) throw std::runtime_error("Failed to encode video.");
+
+        sprintf(filename, "dvr-%06d.jpg", FrameNo);
+        JPEGFile = fopen(filename, "wb");
+
+        fwrite(packet.data, 1, packet.size, JPEGFile);
+        fclose(JPEGFile);
+
+        av_free_packet(&packet);
+        avcodec_close(jpegCtx);
+
     }
 
     void VideoDecoder::save_gray_frame(unsigned char *buf, int wrap, int xsize, int ysize, char *filename)

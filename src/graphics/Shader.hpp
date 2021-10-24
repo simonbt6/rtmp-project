@@ -9,9 +9,9 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
-#include "utils/vec2.hpp"
-#include "utils/vec3.hpp"
-#include "utils/vec4.hpp"
+#include <maths/vec2.hpp>
+#include <maths/vec3.hpp>
+#include <maths/vec4.hpp>
 
 #include <iostream>
 #include <string>
@@ -19,8 +19,8 @@
 #include <vector>
 #include <inttypes.h>
 
-#include <FileManager.hpp>
-#include <FormatedPrint.hpp>
+#include <utils/FileManager.hpp>
+#include <utils/FormatedPrint.hpp>
 
 namespace Graphics
 {

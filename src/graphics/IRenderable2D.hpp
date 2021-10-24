@@ -9,11 +9,12 @@
 #include "Texture.hpp"
 #include "Renderer2D.hpp"
 
-#include "utils/color.hpp"
-#include "utils/vec2.hpp"
-#include "utils/vec3.hpp"
-#include "utils/vec4.hpp"
-#include "utils/rectangle.hpp"
+#include "color.hpp"
+
+#include <maths/vec2.hpp>
+#include <maths/vec3.hpp>
+#include <maths/vec4.hpp>
+#include <maths/rectangle.hpp>
 
 
 #include <inttypes.h>
@@ -26,7 +27,7 @@ namespace Graphics
     {
         protected:
 
-            Maths::Color m_Color;
+            Color m_Color;
             Texture* m_Texture;
 
             Maths::Rectangle m_Bounds;
@@ -36,7 +37,7 @@ namespace Graphics
             bool m_Visible;
 
         public:
-            IRenderable2D(const Maths::vec2<float>& position, const Maths::vec2<float>& size, const Maths::Color& color)
+            IRenderable2D(const Maths::vec2<float>& position, const Maths::vec2<float>& size, const Color& color)
             : m_Bounds(Maths::Rectangle(position, size)), m_Color(color) {}
 
             virtual ~IRenderable2D(){}
@@ -50,8 +51,8 @@ namespace Graphics
             inline const Maths::vec2<float>& GetSize() const{ return m_Bounds.GetSize(); }
             inline void SetSize(const Maths::vec2<float>& size) { m_Bounds.SetSize(size); }
 
-            inline const Maths::Color& GetColor() const{return m_Color; }
-            inline void SetColor(const Maths::Color& color) {m_Color = color; }
+            inline const Color& GetColor() const{return m_Color; }
+            inline void SetColor(const Color& color) {m_Color = color; }
 
             inline const Maths::Rectangle& GetBounds() const{ return m_Bounds; }
             inline void SetBounds(const Maths::Rectangle& bounds) { m_Bounds = bounds; }

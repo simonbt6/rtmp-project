@@ -14,8 +14,6 @@ namespace Graphics
             throw std::runtime_error("Could not open window.");
 
         printf("GLFW Version: %s\n", glfwGetVersionString());
-        frame_data = Utils::FileManager::ReadBinaryFile("mat.jpg");
-        Utils::FormatedPrint::PrintInfo("Frame data size: " + std::to_string(frame_data->size()));
 
         glfwSetErrorCallback(WindowCallbacks::ErrorCallback);
         glfwSetFramebufferSizeCallback(m_Window, WindowCallbacks::WindowResizeCallback);
@@ -33,9 +31,6 @@ namespace Graphics
 
         this->m_Render = new Render(m_Window);
         this->m_Renderer2D = new Renderer2D();
-        this->Loop();
-        this->CleanUp();
-
         
     };
 
@@ -46,14 +41,14 @@ namespace Graphics
         glfwTerminate();
     }
 
-    void Window::Loop()
+    void Window::Loop(void(* fn)(Graphics::Renderer2D&))
     {
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
         Maths::vec2<float> pos(0.5f, -0.5f);
         Maths::vec2<float> size(0.5f, 0.5f);
-        Maths::Color              color(0.0f, 1.0f, 0.0f, 1.0f);
+        Color              color(0.0f, 1.0f, 0.0f, 1.0f);
 
         Primitives::Sprite sprite(pos, size, color);
 
@@ -66,15 +61,19 @@ namespace Graphics
 
             // glViewport(0, 0, m_Window_width, m_Window_height);
 
+            if (fn != nullptr) fn(*m_Renderer2D);
+
 
             // m_Render->DrawRectangle(400, 400, 0x3F, 0xFF, 0x7F);
             // m_Render->DrawFrame(frame_data->data(), frame_data->size(), 1.0f, 1.0f);
             // m_Renderer2D->DrawRectangle(0.5f, 0.5f, Maths::vec4<float>(1.0f, 0.0f, 0.0f, 1.0f));
             // m_Renderer2D->DrawSprite(Texture("frame-6.pgm"), 1.0f, 1.0f);
             // m_Renderer2D->DrawRect(Maths::Rectangle(0.5f, 0.5f, 0.5f, 0.5f), Color(1.0f, 0.0f, 0.0f, 1.0f));
-            m_Renderer2D->Draw(sprite);
+            // m_Renderer2D->Draw(sprite);
             glfwSwapBuffers(m_Window);
             glfwPollEvents();
         }   
+
+        this->CleanUp();
     }
 };
