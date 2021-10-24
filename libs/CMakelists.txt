@@ -12,10 +12,13 @@ set (LIBS
     "../libs/ffmpeg/libpostprocd"
     "../libs/ffmpeg/libswresampled"
     "../libs/ffmpeg/libswscaled"
+
+    "../libs/FreeType/freetype"
 )
 
 add_subdirectory(glfw)
 add_subdirectory(glad)
+# add_subdirectory(FreeType)
 
 
 add_library(libs INTERFACE)
@@ -25,3 +28,4 @@ target_include_directories(libs INTERFACE)
 target_link_libraries(libs INTERFACE ${LIBS})
 target_link_libraries(libs INTERFACE glfw)
 target_link_libraries(libs INTERFACE glad)
+# target_link_libraries(libs INTERFACE FreeType/freetype)
