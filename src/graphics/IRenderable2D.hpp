@@ -9,11 +9,12 @@
 #include "Texture.hpp"
 #include "Renderer2D.hpp"
 
-#include "utils/color.hpp"
-#include "utils/vec2.hpp"
-#include "utils/vec3.hpp"
-#include "utils/vec4.hpp"
-#include "utils/rectangle.hpp"
+#include "color.hpp"
+
+#include <maths/vec2.hpp>
+#include <maths/vec3.hpp>
+#include <maths/vec4.hpp>
+#include <maths/rectangle.hpp>
 
 
 #include <inttypes.h>

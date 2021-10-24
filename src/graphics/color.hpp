@@ -6,7 +6,7 @@
  * 
  */
 
-#include "vec4.hpp"
+#include <maths/vec4.hpp>
 
 namespace Graphics
 {
@@ -38,4 +38,4 @@ namespace Graphics
             inline void SetA(float value) { SetW(value); }
 
     };
-}
+};

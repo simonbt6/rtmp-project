@@ -5,6 +5,7 @@ namespace Graphics
     Renderer2D::Renderer2D()
     {
         this->LoadShaders();
+        this->LoadCharacters();
     }
 
     Renderer2D::~Renderer2D()
@@ -159,6 +160,51 @@ namespace Graphics
     }
 
 
+    void Renderer2D::DrawText(Maths::vec2<float> position, float scale, const std::string& text, const Color& color)
+    {
+        Shader* shader = GetShader("TextShader");
+        shader->SetUniform4f("textColor", color);
+
+        // Maths::mat4<float> id = Maths::mat4<float>::Identity();
+
+        glActiveTexture(GL_TEXTURE0);
+        shader->SetUniform1i("text", 0);
+        m_VAO.Bind();
+
+        std::string::const_iterator it;
+        for (it = text.begin(); it != text.end(); it++)
+        {
+            TextCharacter c = m_Characters[*it];
+
+            float xpos = position.GetX() + c.Bearing.GetX() * scale;
+            float ypos = position.GetY() + c.Bearing.GetY() * scale;
+
+            float width = c.Bearing.GetX() * scale;
+            float height = c.Bearing.GetY() * scale;
+
+            float vertices[6][4] = {
+                {xpos,         ypos + height, 0.0f, 0.0f},
+                {xpos,         ypos,          0.0f, 1.0f},
+                {xpos + width, ypos,          1.0f, 1.0f,},
+                
+                {xpos,         ypos + height, 0.0f, 0.0f,},
+                {xpos + width, ypos,          1.0f, 1.0f,},
+                {xpos + width, ypos + height, 1.0f, 0.0f }
+            };
+
+            glBindTexture(GL_TEXTURE_2D, c.TextureID);
+            VertexBuffer vbo(0, 0);
+            vbo.Bind();
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+            vbo.Unbind();
+            
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+
+            position += Maths::vec2<float>((c.Advance >> 6) * scale, 0.0f);
+        }
+    }
+
+
     Shader* Renderer2D::GetShader(const std::string& name)
     {
         return 
@@ -171,5 +217,58 @@ namespace Graphics
     {
         for (const std::string& shader_name : *Utils::FileManager::ReadLinesFromFile(s_FolderPath + "shaders"))
             m_Shaders.insert(std::pair<std::string, Shader*> (shader_name, new Shader(shader_name)));
+    }
+
+    void Renderer2D::LoadCharacters()
+    {
+        FT_Library ft;
+        if (FT_Init_FreeType(&ft)) throw std::runtime_error("\nFailed to init FreeType library.");
+
+        FT_Face face;
+        if (FT_New_Face(ft, "fonts/arial.ttf", 0, &face)) throw std::runtime_error("\nFailed to load font.");
+
+        FT_Set_Pixel_Sizes(face, 0, 48);
+
+        if (FT_Load_Char(face, 'X', FT_LOAD_RENDER)) throw std::runtime_error("\nFailed to load Glyph.");
+
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+        for (uint8_t c = 0; c < 128; c++)
+        {
+            if (FT_Load_Char(face, c, FT_LOAD_RENDER))
+            {
+                std::runtime_error("\nFailed to load Glyph");
+                continue;
+            }
+
+            uint32_t texture;
+            glGenTextures(1, &texture);
+            glBindTexture(GL_TEXTURE_2D, texture);
+            glTexImage2D(
+                GL_TEXTURE_2D,
+                0,
+                GL_RED,
+                face->glyph->bitmap.width,
+                face->glyph->bitmap.rows,
+                0,
+                GL_RED,
+                GL_UNSIGNED_BYTE,
+                face->glyph->bitmap.buffer
+            );
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+            TextCharacter character = {
+                texture,
+                Maths::vec2<float>(face->glyph->bitmap.width, face->glyph->bitmap.rows),
+                Maths::vec2<float>(face->glyph->bitmap_left, face->glyph->bitmap_top),
+                face->glyph->advance.x
+            };
+            m_Characters.insert(std::pair<char, TextCharacter>(c, character));
+        }
     }
 }

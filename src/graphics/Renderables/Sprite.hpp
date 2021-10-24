@@ -6,12 +6,13 @@
  * 
  */
 
-#include "../IRenderable2D.hpp"
-#include "../utils/vec2.hpp"
-#include "../utils/vec3.hpp"
-#include "../utils/vec4.hpp"
-#include "../utils/color.hpp"
-#include "../utils/rectangle.hpp"
+#include <graphics/IRenderable2D.hpp>
+#include <graphics/color.hpp>
+
+#include <maths/vec2.hpp>
+#include <maths/vec3.hpp>
+#include <maths/vec4.hpp>
+#include <maths/rectangle.hpp>
 
 namespace Graphics
 {
@@ -20,6 +21,7 @@ namespace Graphics
         class Sprite: public IRenderable2D
         {
             public:
+            
                 Sprite(const Maths::vec2<float>& position, const Maths::vec2<float>& size, const Color& color)
                 :IRenderable2D(position, size, color)
                 {

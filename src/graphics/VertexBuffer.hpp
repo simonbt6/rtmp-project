@@ -26,5 +26,7 @@ namespace Graphics
             void Bind() const;
             void Unbind() const;
 
+            inline const uint32_t& GetRenderID() const { return m_RenderID; }
+
     };
 }

@@ -2,18 +2,45 @@ cmake_minimum_required(VERSION 3.20)
 
 project(rtmp_lib)
 
-set (rtmp_core_libs
+set (rtmp_libs
     "core/RTMPHandler.cpp"
     "core/RTMPMessage.cpp"
     "core/RTMPParser.cpp"
     "core/RTMPResponse.cpp"
-    "codecs/VideoCodecs.cpp"
+    
+    "codecs/VideoDecoder.cpp"
+
+
+    "graphics/Window.cpp"
+    "graphics/WindowCallbacks.cpp"
+    
+    "graphics/Render.cpp"
+    "graphics/Renderer2D.cpp"
+
+    "graphics/Shader.cpp"
+    "graphics/Texture.cpp"
+    
+    "graphics/IndexBuffer.cpp"
+    "graphics/VertexBuffer.cpp"
+    "graphics/VertexArray.cpp"
+
+    "graphics/Font.cpp"
+
+    "maths/mat4.cpp"
+
+    
+    "utils/FileManager.cpp"
 )
 
-set (rtmp_codecs_libs
-)
 
 set (includes "../includes/")
+set (libs "../libs/")
 
-add_library(rtmp_lib ${rtmp_core_libs} ${rtmp_codecs_lib})
-target_include_directories(rtmp_lib PUBLIC core/ utils/ codecs/ ${includes} ${includes}/ffmpeg)
+
+add_library(rtmp_lib ${rtmp_libs})
+
+# core/ graphics/ codecs/ utils/
+
+target_include_directories(rtmp_lib PUBLIC / ${includes} ${includes}/ffmpeg ../libs/glfw/include/ ../libs/glfw/deps)
+target_link_libraries(rtmp_lib glfw)
+target_link_libraries(rtmp_lib glad)

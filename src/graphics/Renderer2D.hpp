@@ -9,38 +9,54 @@
 
 #include <glad/gl.h>
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 #include "Shader.hpp"
 #include "Texture.hpp"
 #include "VertexArray.hpp"
 #include "VertexBuffer.hpp"
 #include "VertexBufferLayout.hpp"
 #include "IndexBuffer.hpp"
+#include "color.hpp"
 
 #include "IRenderable2D.hpp"
 
-#include "utils/vec2.hpp"
-#include "utils/vec3.hpp"
-#include "utils/vec4.hpp"
-#include "utils/color.hpp"
-#include "utils/rectangle.hpp"
+#include <maths/vec2.hpp>
+#include <maths/vec3.hpp>
+#include <maths/vec4.hpp>
+#include <maths/rectangle.hpp>
+#include <maths/mat4.hpp>
 
-#include <FileManager.hpp>
-#include <FormatedPrint.hpp>
+#include <utils/FileManager.hpp>
+// #include <FormatedPrint.hpp>
 
 #include <map>
 #include <string>
 
 namespace Graphics
 {
-
     class IRenderable2d;
+
+    struct TextCharacter
+    {
+        uint32_t TextureID;
+
+        Maths::vec2<float> Size;
+        Maths::vec2<float> Bearing;
+
+        uint32_t Advance;
+    };
+
     class Renderer2D
     {
         private:
             std::map<std::string, Shader*> m_Shaders;
+            std::map<char, TextCharacter> m_Characters;
             static inline const std::string s_FolderPath = "D:/dev-repo/VideoStreaming/RTMP/src/graphics/shaders/";
 
             VertexArray m_VAO;
+
 
         public:
             Renderer2D();
@@ -60,10 +76,13 @@ namespace Graphics
 
             void DrawSprite(const Texture& texture, float width, float height);
 
+            void DrawText(Maths::vec2<float> position, float scale, const std::string& text, const Color& color);
         private:
             Shader* GetShader(const std::string& name);
 
             void LoadShaders();
+
+            void LoadCharacters();
 
     };
 };

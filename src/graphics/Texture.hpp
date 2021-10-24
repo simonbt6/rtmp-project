@@ -17,9 +17,8 @@
 #include <vector>
 
 // Utils
-#include <FormatedPrint.hpp>
-#include <FileManager.hpp>
-#include <Memory.hpp>
+#include <utils/FormatedPrint.hpp>
+#include <utils/FileManager.hpp>
 
 namespace Graphics
 {
@@ -35,6 +34,8 @@ namespace Graphics
         public:
             Texture(const std::string& path);
             Texture(uint8_t* bytes, uint32_t size);
+            Texture(uint8_t* bytes, int width, int height);
+
             ~Texture();
 
 
@@ -43,5 +44,6 @@ namespace Graphics
 
             inline int32_t GetWidth() const { return m_Width; }
             inline int32_t GetHeight() const { return m_Height; }
+
     };
 };

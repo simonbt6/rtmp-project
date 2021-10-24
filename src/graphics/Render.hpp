@@ -13,8 +13,8 @@
 #include "VertexArray.hpp"
 #include "IndexBuffer.hpp"
 
-#include "utils/vec2.hpp"
-#include "utils/vec4.hpp"
+#include <maths/vec2.hpp>
+#include <maths/vec4.hpp>
 
 #include <iostream>
 #include <linmath.h>
