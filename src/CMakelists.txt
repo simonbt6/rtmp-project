@@ -1,59 +1,17 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(rtmp_lib)
-
-set (rtmp_libs
-    "core/RTMPHandler.cpp"
-    "core/RTMPMessage.cpp"
-    "core/RTMPParser.cpp"
-    "core/RTMPResponse.cpp"
-    
-<<<<<<< HEAD
-    "codecs/VideoCodecs.cpp"
-    "codecs/StreamDecoder.cpp"
-
-
-    "graphics/Window.cpp"
-    "graphics/WindowCallbacks.cpp"
-    
-    "graphics/Render.cpp"
-    "graphics/Renderer2D.cpp"
-
-    "graphics/Shader.cpp"
-    "graphics/Texture.cpp"
-    
-    "graphics/IndexBuffer.cpp"
-    "graphics/VertexBuffer.cpp"
-    "graphics/VertexArray.cpp"
-
-    
-    "utils/FileManager.cpp"
-    "utils/Memory.cpp"
-=======
-    "codecs/VideoDecoder.cpp"
-    
-    "utils/FileManager.cpp"
->>>>>>> graphics
-)
-
+project(src_lib)
 
 set (includes "../includes/")
 set (libs "../libs/")
 
 add_subdirectory(graphics)
 add_subdirectory(maths)
+add_subdirectory(rtmp)
+add_subdirectory(muxer)
+add_subdirectory(utils)
 
-add_library(rtmp_lib ${rtmp_libs})
+add_library(src_lib INTERFACE)
 
-<<<<<<< HEAD
-add_library(rtmp_lib ${rtmp_libs})
-
-target_include_directories(rtmp_lib PUBLIC core/ graphics/ codecs/ utils/ ${includes} ${includes}/ffmpeg ../libs/glfw/include/ ../libs/glfw/deps/ ../libs/glad/include/)
+target_include_directories(rtmp_lib PUBLIC rtmp/ graphics/ codecs/ utils/ ${includes} ${includes}/ffmpeg ../libs/glfw/include/ ../libs/glfw/deps/ ../libs/glad/include/)
 target_link_directories(rtmp_lib PUBLIC glfw)
-=======
-target_include_directories(rtmp_lib PUBLIC / ${includes} ${includes}/ffmpeg ../libs/glfw/include/ ../libs/glfw/deps)
-target_link_libraries(rtmp_lib rtmp_graphics)
-target_link_libraries(rtmp_lib rtmp_maths)
-target_link_libraries(rtmp_lib glfw)
-target_link_libraries(rtmp_lib glad)
->>>>>>> graphics
