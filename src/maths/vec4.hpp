@@ -7,89 +7,86 @@
  * 
  */
 
+#include "vec3.hpp"
+#include "math_funcs.hpp"
+
 namespace Maths
 {
-    template <typename IntegerType>
+    class mat4;
+    
     class vec4
     {
         protected:
-            IntegerType m_X;
-            IntegerType m_Y;
-            IntegerType m_Z;
-            IntegerType m_W;
+            float m_X;
+            float m_Y;
+            float m_Z;
+            float m_W;
 
         public:
-            vec4(IntegerType x = 0, IntegerType y = 0, IntegerType z = 0, IntegerType w = 0): m_X(x), m_Y(y), m_Z(z), m_W(w){};
-            ~vec4(){}
+            vec4(float value);
+            vec4(float x, float y, float z, float w);
+            vec4(vec3 xyz, float w);
+            ~vec4();
 
             // Getters and setters.
-            inline IntegerType GetX() const{ return m_X; }
-            inline IntegerType GetY() const{ return m_Y; }
-            inline IntegerType GetZ() const{ return m_Z; }
-            inline IntegerType GetW() const{ return m_W; }
+            float GetX() const;
+            float GetY() const;
+            float GetZ() const;
+            float GetW() const;
 
-            inline void SetX(IntegerType value) { m_X = value; }
-            inline void SetY(IntegerType value) { m_Y = value; }
-            inline void SetZ(IntegerType value) { m_Z = value; }
-            inline void SetW(IntegerType value) { m_W = value; }
+            void SetX(float value);
+            void SetY(float value);
+            void SetZ(float value);
+            void SetW(float value);
 
 
             // Math operations
-            inline vec4<IntegerType> Add        (const vec4<IntegerType>& other)  const
-            { return vec4<IntegerType>(GetX() + other.GetX(), this->GetY() + other.GetY(), this->GetZ() + other.GetZ(), this->GetW() + other.GetW()); }
-            inline vec4<IntegerType> Substract  (const vec4<IntegerType>& other)  const
-            { return vec4<IntegerType>(GetX() - other.GetX(), this->GetY() - other.GetY(), this->GetZ() - other.GetZ(), this->GetW() - other.GetW()); }
-            inline vec4<IntegerType> Multiply   (const vec4<IntegerType>& other)  const
-            { return vec4<IntegerType>(GetX() * other.GetX(), this->GetY() * other.GetY(), this->GetZ() * other.GetZ(), this->GetW() * other.GetW()); }
-            inline vec4<IntegerType> Divide     (const vec4<IntegerType>& other)  const
-            { return vec4<IntegerType>(GetX() / other.GetX(), this->GetY() / other.GetY(), this->GetZ() / other.GetZ(), this->GetW() / other.GetW()); }
+            vec4 Add        (const vec4& other)  const;
+            vec4 Substract  (const vec4& other)  const;
+            vec4 Multiply   (const vec4& other)  const;
+            vec4 Multiply   (const mat4& matrix) const;
+            vec4 Divide     (const vec4& other)  const;
 
 
-            inline vec4<IntegerType>& SetEqualTo (const vec4<IntegerType>& other)      { *this = other; return *this; }
+            vec4& SetEqualTo (const vec4& other);
+            vec4& operator=  (const vec4& other);
 
-            inline vec4<IntegerType>& operator= (const vec4<IntegerType>& other)       { return SetEqualTo(other); }
+            vec4  operator+  (const vec4& other) const;
+            vec4& operator+= (const vec4& other);
+            vec4& operator++ ();
 
-            inline vec4<IntegerType>  operator+  (const vec4<IntegerType>& other) const{ return Add(other); }
-            inline vec4<IntegerType>& operator+= (const vec4<IntegerType>& other)      { return SetEqualTo(Add(other)); }
-            inline vec4<IntegerType>& operator++ ()                                    { return SetEqualTo(Add(vec4<IntegerType>((IntegerType)1, (IntegerType)1, (IntegerType)1, (IntegerType)1))); }
+            vec4  operator-  (const vec4& other) const;
+            vec4& operator-= (const vec4& other);
+            vec4& operator--  ();
 
-            inline vec4<IntegerType>  operator-  (const vec4<IntegerType>& other) const{ return Substract(other); }
-            inline vec4<IntegerType>& operator-= (const vec4<IntegerType>& other)      { return SetEqualTo(Substract(other)); }
-            inline vec4<IntegerType>& operator--  ()                                   { return SetEqualTo(Substract(vec4<IntegerType>((IntegerType)1, (IntegerType)1, (IntegerType)1, (IntegerType)1))); }
+            vec4  operator*  (const vec4& other) const;
+            vec4& operator*= (const vec4& other);
 
-            inline vec4<IntegerType>  operator*  (const vec4<IntegerType>& other) const{ return Multiply(other); }
-            inline vec4<IntegerType>& operator*= (const vec4<IntegerType>& other)      { return SetEqualTo(Multiply(other)); }
+            vec4  operator/  (const vec4& other) const;
+            vec4& operator/= (const vec4& other);
 
-            inline vec4<IntegerType>  operator/  (const vec4<IntegerType>& other) const{ return Divide(other); }
-            inline vec4<IntegerType>& operator/= (const vec4<IntegerType>& other)      { return SetEqualTo(Divide(other)); }
 
 
             // Logical operations
-            inline bool IsEqualTo         (const vec4<IntegerType>& other) const
-            { return ((this->GetX() == other.GetX()) && (this->GetY() == other.m_Y) && (this->GetZ() == other.GetZ()) && (this->GetW() == other.GetW())); }
-            inline bool IsNotEqualTo      (const vec4<IntegerType>& other) const
-            { return (!IsEqualTo(other)); }
+            bool IsEqualTo         (const vec4& other) const;
+            bool IsNotEqualTo      (const vec4& other) const;
 
-            inline bool IsGreaterThan     (const vec4<IntegerType>& other) const
-            { return ((this->GetX() > other.GetX()) && (this->GetY() > other.m_Y) && (this->GetZ() > other.GetZ()) && (this->GetW() > other.GetW())); }
-            inline bool IsGreaterOrEqualTo(const vec4<IntegerType>& other) const
-            { return ((this->GetX() >= other.GetX()) && (this->GetY() >= other.m_Y) && (this->GetZ() >= other.GetZ()) && (this->GetW() >= other.GetW())); }
+            bool IsGreaterThan     (const vec4& other) const;
+            bool IsGreaterOrEqualTo(const vec4& other) const;
             
-            inline bool IsLessThan        (const vec4<IntegerType>& other) const
-            { return ((this->GetX() < other.GetX()) && (this->GetY() < other.m_Y) && (this->GetZ() < other.GetZ()) && (this->GetW() < other.GetW())); }
-            inline bool IsLessOrEqualTo   (const vec4<IntegerType>& other) const
-            { return ((this->GetX() <= other.GetX()) && (this->GetY() <= other.m_Y) && (this->GetZ() <= other.GetZ()) && (this->GetW() <= other.GetW())); }
+            bool IsLessThan        (const vec4& other) const;
+            bool IsLessOrEqualTo   (const vec4& other) const;
             
 
             
-            inline bool operator==(const vec4<IntegerType>& other) const{ return (this->IsEqualTo(other)); }
-            inline bool operator!=(const vec4<IntegerType>& other) const{ return (this->IsNotEqualTo(other)); }
+            bool operator==(const vec4& other) const;
+            bool operator!=(const vec4& other) const;
             
-            inline bool operator> (const vec4<IntegerType>& other) const{ return (this->IsGreaterThan(other)); }
-            inline bool operator>=(const vec4<IntegerType>& other) const{ return (this->IsGreaterOrEqualTo(other)); }
+            bool operator> (const vec4& other) const;
+            bool operator>=(const vec4& other) const;
 
-            inline bool operator< (const vec4<IntegerType>& other) const{ return (this->IsLessThan(other)); }
-            inline bool operator<=(const vec4<IntegerType>& other) const{ return (this->IsLessOrEqualTo(other)); }
+            bool operator< (const vec4& other) const;
+            bool operator<=(const vec4& other) const;
 
     };
 };
