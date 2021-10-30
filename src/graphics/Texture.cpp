@@ -2,15 +2,20 @@
 #include "Texture.hpp"
 
 
-
 namespace Graphics
 {
+    Texture::Texture(uint32_t renderID): m_RenderID(renderID)
+    {
+        
+    }
+
     Texture::Texture(const std::string& filepath)
         : m_RenderID(0), m_Filepath(filepath), m_TextureBuffer(nullptr), m_Width(0), m_Height(0), m_BPP(0)
     {
         stbi_set_flip_vertically_on_load(1);
 
         m_TextureBuffer = stbi_load(filepath.c_str(), &m_Width, &m_Height, &m_BPP, 4);
+        printf("\nInit texture");
 
         glGenTextures(1, &m_RenderID);
         glBindTexture(GL_TEXTURE_2D, m_RenderID);      

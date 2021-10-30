@@ -2,10 +2,11 @@
 
 namespace Graphics
 {
-    Renderer2D::Renderer2D()
+    Renderer2D::Renderer2D(Maths::mat4 projectionMatrix)
+        : m_TextRenderer(new TextRenderer()), m_ProjectionMatrix(projectionMatrix)
     {
         this->LoadShaders();
-        this->LoadCharacters();
+        // this->LoadCharacters();
     }
 
     Renderer2D::~Renderer2D()
@@ -23,7 +24,7 @@ namespace Graphics
         shader.Bind();
         m_VAO.Bind();
         ibo.Bind();
-
+        
         glDrawElements(GL_TRIANGLES, ibo.GetCount(), GL_UNSIGNED_INT, nullptr);
     }
 
@@ -57,8 +58,8 @@ namespace Graphics
 
     void Renderer2D::DrawRect(const Maths::Rectangle& rectangle, const Color& color)
     {
-        const Maths::vec2<float>& position = rectangle.GetPosition();
-        const Maths::vec2<float>& size = rectangle.GetSize();
+        const Maths::vec2& position = rectangle.GetPosition();
+        const Maths::vec2& size = rectangle.GetSize();
 
         const float width = size.GetX(), 
                     height = size.GetY(),
@@ -87,7 +88,7 @@ namespace Graphics
         Draw(ibo, *shader);
     }
 
-    void Renderer2D::DrawRect(float width, float height, Maths::vec4<float> color)
+    void Renderer2D::DrawRect(float width, float height, const Color& color)
     {
         Clear();
         float vertices[] = {
@@ -124,15 +125,25 @@ namespace Graphics
 
     }
 
-    void Renderer2D::DrawSprite(const Texture& texture, float width, float height)
+    void Renderer2D::DrawSprite(const Texture& texture, Maths::Rectangle rectangle)
+    {
+        DrawSprite(texture, rectangle.GetPosition(), rectangle.GetSize());
+    }
+
+    void Renderer2D::DrawSprite(const Texture& texture, Maths::vec2 position, Maths::vec2 size)
+    {
+        DrawSprite(texture, position.GetX(), position.GetY(), size.GetX(), size.GetY());
+    }
+
+    void Renderer2D::DrawSprite(const Texture& texture, float x, float y, float width, float height)
     {
         Clear();
         float vertices[] = {
         //  Position        Couleur             Coordonnées de texture
-            -width, -height,   0.0f, 0.0f, // Haut gauche
-             width, -height,   1.0f, 0.0f, // Haut droit
-             width,  height,   1.0f, 1.0f, // Bas droit
-            -width,  height,   0.0f, 1.0f  // Bas gauche
+            (-width + x), (-height + y),   0.0f, 0.0f, // Haut gauche
+            ( width + x), (-height + y),   1.0f, 0.0f, // Haut droit
+            ( width + x), ( height + y),   1.0f, 1.0f, // Bas droit
+            (-width + x), ( height + y),   0.0f, 1.0f  // Bas gauche
         };
 
         uint32_t indices[] = {
@@ -152,57 +163,26 @@ namespace Graphics
 
         Shader* shader = GetShader("texture");
         shader->Bind();
+        glMatrixMode(GL_PROJECTION);
 
         texture.Bind();
+        
+        Maths::mat4 view(1);
+        Maths::mat4 model(1);
+        Maths::mat4 proj = Maths::mat4::Translate(Maths::vec3(0.0, 0, 0));
+
+        Maths::mat4 mvp = proj * view * model;
+        shader->SetUniformMat4("u_Projection", mvp);
         shader->SetUniform1i("u_Texture", 0);
 
         Draw(ibo, *shader);
     }
 
-
-    void Renderer2D::DrawText(Maths::vec2<float> position, float scale, const std::string& text, const Color& color)
+    void Renderer2D::DrawText(const std::string& text, const std::string& font_name, float size, const Color& color, Maths::vec2 position)
     {
-        Shader* shader = GetShader("TextShader");
-        shader->SetUniform4f("textColor", color);
-
-        // Maths::mat4<float> id = Maths::mat4<float>::Identity();
-
-        glActiveTexture(GL_TEXTURE0);
-        shader->SetUniform1i("text", 0);
-        m_VAO.Bind();
-
-        std::string::const_iterator it;
-        for (it = text.begin(); it != text.end(); it++)
-        {
-            TextCharacter c = m_Characters[*it];
-
-            float xpos = position.GetX() + c.Bearing.GetX() * scale;
-            float ypos = position.GetY() + c.Bearing.GetY() * scale;
-
-            float width = c.Bearing.GetX() * scale;
-            float height = c.Bearing.GetY() * scale;
-
-            float vertices[6][4] = {
-                {xpos,         ypos + height, 0.0f, 0.0f},
-                {xpos,         ypos,          0.0f, 1.0f},
-                {xpos + width, ypos,          1.0f, 1.0f,},
-                
-                {xpos,         ypos + height, 0.0f, 0.0f,},
-                {xpos + width, ypos,          1.0f, 1.0f,},
-                {xpos + width, ypos + height, 1.0f, 0.0f }
-            };
-
-            glBindTexture(GL_TEXTURE_2D, c.TextureID);
-            VertexBuffer vbo(0, 0);
-            vbo.Bind();
-            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
-            vbo.Unbind();
-            
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-
-            position += Maths::vec2<float>((c.Advance >> 6) * scale, 0.0f);
-        }
+        m_TextRenderer->DrawString(text, font_name, color, size, position);
     }
+
 
 
     Shader* Renderer2D::GetShader(const std::string& name)
@@ -219,56 +199,56 @@ namespace Graphics
             m_Shaders.insert(std::pair<std::string, Shader*> (shader_name, new Shader(shader_name)));
     }
 
-    void Renderer2D::LoadCharacters()
-    {
-        FT_Library ft;
-        if (FT_Init_FreeType(&ft)) throw std::runtime_error("\nFailed to init FreeType library.");
+    // void Renderer2D::LoadCharacters()
+    // {
+    //     FT_Library ft;
+    //     if (FT_Init_FreeType(&ft)) throw std::runtime_error("\nFailed to init FreeType library.");
 
-        FT_Face face;
-        if (FT_New_Face(ft, "fonts/arial.ttf", 0, &face)) throw std::runtime_error("\nFailed to load font.");
+    //     FT_Face face;
+    //     if (FT_New_Face(ft, "fonts/arial.ttf", 0, &face)) throw std::runtime_error("\nFailed to load font.");
 
-        FT_Set_Pixel_Sizes(face, 0, 48);
+    //     FT_Set_Pixel_Sizes(face, 0, 48);
 
-        if (FT_Load_Char(face, 'X', FT_LOAD_RENDER)) throw std::runtime_error("\nFailed to load Glyph.");
+    //     if (FT_Load_Char(face, 'X', FT_LOAD_RENDER)) throw std::runtime_error("\nFailed to load Glyph.");
 
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    //     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-        for (uint8_t c = 0; c < 128; c++)
-        {
-            if (FT_Load_Char(face, c, FT_LOAD_RENDER))
-            {
-                std::runtime_error("\nFailed to load Glyph");
-                continue;
-            }
+    //     for (uint8_t c = 0; c < 128; c++)
+    //     {
+    //         if (FT_Load_Char(face, c, FT_LOAD_RENDER))
+    //         {
+    //             std::runtime_error("\nFailed to load Glyph");
+    //             continue;
+    //         }
 
-            uint32_t texture;
-            glGenTextures(1, &texture);
-            glBindTexture(GL_TEXTURE_2D, texture);
-            glTexImage2D(
-                GL_TEXTURE_2D,
-                0,
-                GL_RED,
-                face->glyph->bitmap.width,
-                face->glyph->bitmap.rows,
-                0,
-                GL_RED,
-                GL_UNSIGNED_BYTE,
-                face->glyph->bitmap.buffer
-            );
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //         uint32_t texture;
+    //         glGenTextures(1, &texture);
+    //         glBindTexture(GL_TEXTURE_2D, texture);
+    //         glTexImage2D(
+    //             GL_TEXTURE_2D,
+    //             0,
+    //             GL_RED,
+    //             face->glyph->bitmap.width,
+    //             face->glyph->bitmap.rows,
+    //             0,
+    //             GL_RED,
+    //             GL_UNSIGNED_BYTE,
+    //             face->glyph->bitmap.buffer
+    //         );
+    //         glEnable(GL_BLEND);
+    //         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+    //         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    //         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    //         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    //         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-            TextCharacter character = {
-                texture,
-                Maths::vec2<float>(face->glyph->bitmap.width, face->glyph->bitmap.rows),
-                Maths::vec2<float>(face->glyph->bitmap_left, face->glyph->bitmap_top),
-                face->glyph->advance.x
-            };
-            m_Characters.insert(std::pair<char, TextCharacter>(c, character));
-        }
-    }
+    //         TextCharacter character = {
+    //             texture,
+    //             Maths::vec2<float>(face->glyph->bitmap.width, face->glyph->bitmap.rows),
+    //             Maths::vec2<float>(face->glyph->bitmap_left, face->glyph->bitmap_top),
+    //             (uint32_t)face->glyph->advance.x
+    //         };
+    //         m_Characters.insert(std::pair<char, TextCharacter>(c, character));
+    //     }
+    // }
 }

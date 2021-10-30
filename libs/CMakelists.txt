@@ -14,11 +14,14 @@ set (LIBS
     "../libs/ffmpeg/libswscaled"
 
     "../libs/FreeType/freetype"
+
+    "../libs/irrKlang/irrKlang"
+
 )
 
 add_subdirectory(glfw)
 add_subdirectory(glad)
-# add_subdirectory(FreeType)
+add_subdirectory(ikpMP3)
 
 
 add_library(libs INTERFACE)
@@ -28,4 +31,4 @@ target_include_directories(libs INTERFACE)
 target_link_libraries(libs INTERFACE ${LIBS})
 target_link_libraries(libs INTERFACE glfw)
 target_link_libraries(libs INTERFACE glad)
-# target_link_libraries(libs INTERFACE FreeType/freetype)
+target_link_libraries(libs INTERFACE ikpMP3)

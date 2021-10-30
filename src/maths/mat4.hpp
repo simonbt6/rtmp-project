@@ -8,6 +8,9 @@
  */
 
 #include <inttypes.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <cstring>
 
 #include "vec3.hpp"
 #include "vec4.hpp"
@@ -15,58 +18,61 @@
 
 namespace Maths
 {
-    template <typename IntegerType>
     class mat4
     {
         private:
             union
             {
-                IntegerType m_Elements[4 * 4];
-                vec4<IntegerType> m_Rows[4]; 
+                float m_Elements[4 * 4];
+                vec4  m_Rows[4]; 
             };
 
         public:
 
             mat4();
-            mat4(IntegerType diagonal);
-            mat4(IntegerType* elements);
-            mat4(IntegerType n0, IntegerType n1, IntegerType n2, IntegerType n3);
-            mat4(const vec4<IntegerType>& r0, const vec4<IntegerType>& r1, const vec4<IntegerType>& r2, const vec4<IntegerType>& r3);
+            mat4(float diagonal);
+            mat4(float* elements);
+            mat4(float n0, float n1, float n2, float n3);
+            mat4(const vec4& r0, const vec4& r1, const vec4& r2, const vec4& r3);
 
-            ~mat4() {};
+            ~mat4();
 
             static mat4 Identity();
+            
+            mat4& operator=(const mat4& other);
 
-            mat4<IntegerType>& Multiply   (const mat4<IntegerType>& other);
-            friend mat4<IntegerType> operator*(mat4<IntegerType> left, const mat4<IntegerType>& right);
-            mat4<IntegerType>& operator*=(const mat4<IntegerType>& other);
+            mat4& Multiply   (const mat4& other);
+            friend mat4 operator*(mat4 left, const mat4& right);
+            mat4& operator*=(const mat4& other);
 
-            vec3<IntegerType> Multiply(const vec3<IntegerType>& other) const;
-            friend vec3<IntegerType> operator*(const mat4<IntegerType>& left, const vec3<IntegerType>& right);
+            vec3 Multiply(const vec3& other) const;
+            friend vec3 operator*(const mat4& left, const vec3& right);
 
-            vec4<IntegerType> Multiply(const vec4<IntegerType>& other) const;
-            friend vec4<IntegerType> operator*(const mat4<IntegerType>& left, const vec4<IntegerType>& right);
+            vec4 Multiply(const vec4& other) const;
+            friend vec4 operator*(const mat4& left, const vec4& right);
 
-            mat4<IntegerType>& Invert();
+            mat4& Invert();
 
-            inline IntegerType* GetElements() const{ return m_Elements; }
+            const float* GetElements() const;
 
-            vec4<IntegerType> GetColumn(int32_t index) const;
-            void SetColumn(uint32_t index, const vec4<IntegerType>& column);
-            inline vec3<IntegerType> GetPosition() const { return vec3<IntegerType>(GetColumn(3)); }
-            inline void SetPosition(const vec3<IntegerType>& position) { SetColumn(3, vec4(position, 1.0f)); }
+            const vec4& GetRow(int index) const;
 
-            static mat4<IntegerType> Orthographic(IntegerType left, IntegerType right, IntegerType bottom, IntegerType top, IntegerType near, IntegerType far);
-            static mat4<IntegerType> Perspective (IntegerType fov, IntegerType aspectRatio, IntegerType near, IntegerType far);
-            static mat4<IntegerType> LookAt      (const vec3<IntegerType>& camera, const vec3<IntegerType>& object, const vec3<IntegerType>& up);
+            vec4 GetColumn(int32_t index) const;
+            void SetColumn(uint32_t index, const vec4& column);
+            vec4 GetPosition() const;
+            void SetPosition(const vec4& position);
 
-            static mat4<IntegerType> Translate(const vec3<IntegerType>& translation);
-            static mat4<IntegerType> Rotate   (IntegerType angle, const vec3<IntegerType>& axis);
-            // static mat4<IntegerType> Rotate   (const Quaternion& quat);
-            static mat4<IntegerType> Scale    (const vec3<IntegerType>& scale);
-            static mat4<IntegerType> Invert   (const mat4<IntegerType>& matrix);
+            static mat4 Orthographic(float left, float right, float bottom, float top, float near, float far);
+            static mat4 Perspective (float fov, float aspectRatio, float near, float far);
+            static mat4 LookAt      (const vec3& camera, const vec3& object, const vec3& up);
 
-            static mat4<IntegerType> Transpose(const mat4<IntegerType>& matrix);
+            static mat4 Translate(const vec3& translation);
+            static mat4 Rotate   (float angle, const vec3& axis);
+            // static mat4 Rotate   (const Quaternion& quat);
+            static mat4 Scale    (const vec3& scale);
+            static mat4 Invert   (const mat4& matrix);
+
+            static mat4 Transpose(const mat4& matrix);
 
             // String toString() const;
 

@@ -9,21 +9,11 @@
 #include <GLFW/glfw3.h>
 
 #include "WindowCallbacks.hpp"
-#include "Render.hpp"
-#include "Renderer2D.hpp"
-#include "Texture.hpp"
-#include "color.hpp"
 
-#include <maths/vec2.hpp>
-#include <maths/vec3.hpp>
-#include <maths/vec4.hpp>
-#include <maths/rectangle.hpp>
-
-#include "Renderables/Sprite.hpp"
+#include <maths/maths.hpp>
 
 #include <linmath.h>
 #include <iostream>
-#include <stack>
 
 #include <utils/FileManager.hpp>
 
@@ -32,26 +22,39 @@ namespace Graphics
     class Window
     {
         private:
-            GLFWwindow *m_Window;
+            GLFWwindow *m_GLWindow;
+            std::string m_Title;
 
-            Render* m_Render;
-            Renderer2D* m_Renderer2D;
+            Maths::Rectangle m_Bounds;
 
-            std::vector<uint8_t>* frame_data;
-
-            int m_Window_width, m_Window_height;
+            bool m_Closed;
+            void(* m_Handler)();
 
         public:
-            void Initialize();
+            Window(const std::string& title, const Maths::Rectangle& bounds);
+            ~Window(){};
 
-            void Loop(void(* fn)(Graphics::Renderer2D&));
+            void Init();
 
-            Render* GetRender() const { return m_Render; }
+            void SetTitle(const std::string& title);
 
+            inline void SetHandler(void(* handler)(void)) { m_Handler = handler; }
+
+            inline void Start() { Loop(); }
+            inline void Stop() { glfwSetWindowShouldClose(m_GLWindow, true); }
+
+            inline const Maths::vec2& GetPosition() const { return m_Bounds.GetPosition(); }
+            inline const Maths::vec2& GetSize()     const { return m_Bounds.GetSize(); }
+            inline const Maths::Rectangle&   GetBounds()   const { return m_Bounds; }
+
+            inline void SetSize    (const Maths::vec2& size)     { m_Bounds.SetSize(size); }
+            inline void SetPosition(const Maths::vec2& position) { m_Bounds.SetPosition(position); }
+            inline void SetBounds  (const Maths::Rectangle& bounds)     { m_Bounds = bounds; } 
 
         private:
-            
+            void Loop();
             void CleanUp();
+
 
     };
 };

@@ -21,9 +21,20 @@ namespace Graphics
                 typedef IRenderable2D super;
             
             public:
+                Rectangle(Maths::Rectangle bounds, const Color& color): IRenderable2D(bounds.GetPosition(), bounds.GetSize(), color)
+                {
+
+                }
+
                 ~Rectangle()
                 {
                     
+                }
+
+                virtual void Submit(Renderer2D* renderer) const
+                {
+                    printf("\nRendering");
+                    renderer->DrawRect(m_Bounds, m_Color);
                 }
         };
     };

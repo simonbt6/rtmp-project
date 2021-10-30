@@ -9,9 +9,7 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
-#include <maths/vec2.hpp>
-#include <maths/vec3.hpp>
-#include <maths/vec4.hpp>
+#include <maths/maths.hpp>
 
 #include <iostream>
 #include <string>
@@ -65,11 +63,11 @@ namespace Graphics
              * 
              */
             // Float
-            void SetUniform2f(const std::string& name, Maths::vec2<float> v);
+            void SetUniform2f(const std::string& name, Maths::vec2 v);
             void SetUniform2f(const std::string& name, float v0, float v1);
 
             // Int32
-            void SetUniform2i(const std::string& name, Maths::vec2<int32_t> v);
+            void SetUniform2i(const std::string& name, Maths::vec2 v);
             void SetUniform2i(const std::string& name, int32_t v0, int32_t v1);
 
             /**
@@ -77,11 +75,11 @@ namespace Graphics
              * 
              */
             // Float
-            void SetUniform3f(const std::string& name, Maths::vec3<float> v);
+            void SetUniform3f(const std::string& name, Maths::vec3 v);
             void SetUniform3f(const std::string& name, float v0, float v1, float v2);
 
             // Int32
-            void SetUniform3i(const std::string& name, Maths::vec3<int32_t> v);
+            void SetUniform3i(const std::string& name, Maths::vec3 v);
             void SetUniform3i(const std::string& name, int32_t v0, int32_t v1, int32_t v2);
             
             /**
@@ -89,12 +87,19 @@ namespace Graphics
              * 
              */
             // Float
-            void SetUniform4f(const std::string& name, Maths::vec4<float> v);
+            void SetUniform4f(const std::string& name, Maths::vec4 v);
             void SetUniform4f(const std::string& name, float v0, float v1, float v2, float v3);
 
             // Int32
-            void SetUniform4i(const std::string& name, Maths::vec4<int32_t> v);
+            void SetUniform4i(const std::string& name, Maths::vec4 v);
             void SetUniform4i(const std::string& name, int32_t v0, int32_t v1, int32_t v2, int32_t v3);
+
+
+            /**
+             * uniform Mat4
+             **/
+
+            void SetUniformMat4(const std::string& name, const Maths::mat4& matrix);
 
 
             std::string GetFilepath() { return s_FolderPath + m_Name; };
