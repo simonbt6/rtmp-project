@@ -50,7 +50,11 @@ namespace Utils
 
     std::vector<uint8_t>* FileManager::ReadBinaryFile(std::string filename)
     {
+<<<<<<< HEAD
+        std::vector<uint8_t>* input_bytes = new vector<uint8_t>();
+=======
         std::vector<uint8_t>* input_bytes = new std::vector<uint8_t>();
+>>>>>>> graphics
         std::ifstream input(filename, std::ios::binary);
         input.unsetf(std::ios::skipws);
 

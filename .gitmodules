@@ -7,3 +7,15 @@
 [submodule "includes/stb"]
 	path = includes/stb
 	url = https://github.com/nothings/stb.git
+[submodule "src/muxer"]
+	path = src/muxer
+	url = https://github.com/simonbt6/muxer-lib
+[submodule "src/rtmp"]
+	path = src/rtmp
+	url = https://github.com/simonbt6/rtmp-lib
+[submodule "src/graphics"]
+	path = src/graphics
+	url = https://github.com/simonbt6/GraphicsEngine
+[submodule "src/maths"]
+	path = src/maths
+	url = https://github.com/simonbt6/maths-lib
