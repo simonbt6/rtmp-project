@@ -32,6 +32,7 @@ namespace Graphics
             uint8_t* m_TextureBuffer;
 
         public:
+            Texture(uint32_t renderID);
             Texture(const std::string& path);
             Texture(uint8_t* bytes, uint32_t size);
             Texture(uint8_t* bytes, int width, int height);
@@ -44,6 +45,8 @@ namespace Graphics
 
             inline int32_t GetWidth() const { return m_Width; }
             inline int32_t GetHeight() const { return m_Height; }
+
+            inline uint32_t GetRenderID() const { return m_RenderID; }
 
     };
 };

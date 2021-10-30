@@ -19,47 +19,37 @@
 #include "VertexBufferLayout.hpp"
 #include "IndexBuffer.hpp"
 #include "color.hpp"
-
 #include "IRenderable2D.hpp"
+#include "TextRenderer.hpp"
 
-#include <maths/vec2.hpp>
-#include <maths/vec3.hpp>
-#include <maths/vec4.hpp>
-#include <maths/rectangle.hpp>
-#include <maths/mat4.hpp>
+#include <maths/maths.hpp>
 
 #include <utils/FileManager.hpp>
-// #include <FormatedPrint.hpp>
+#include <utils/FormatedPrint.hpp>
 
 #include <map>
 #include <string>
 
 namespace Graphics
 {
-    class IRenderable2d;
 
-    struct TextCharacter
-    {
-        uint32_t TextureID;
-
-        Maths::vec2<float> Size;
-        Maths::vec2<float> Bearing;
-
-        uint32_t Advance;
-    };
+    
+    class IRenderable2D;
 
     class Renderer2D
     {
         private:
             std::map<std::string, Shader*> m_Shaders;
-            std::map<char, TextCharacter> m_Characters;
             static inline const std::string s_FolderPath = "D:/dev-repo/VideoStreaming/RTMP/src/graphics/shaders/";
+            Maths::mat4 m_ProjectionMatrix;
+
+            TextRenderer* m_TextRenderer;
 
             VertexArray m_VAO;
 
 
         public:
-            Renderer2D();
+            Renderer2D(Maths::mat4 projectionMatrix);
            ~Renderer2D();
 
             void Clear();
@@ -68,15 +58,18 @@ namespace Graphics
             void Draw(const IRenderable2D& renderable);
             
             void DrawRect(const Maths::Rectangle& rectangle, const Color& color);
-            void DrawRect(float width, float height, Maths::vec4<float> color);
+            void DrawRect(float width, float height, const Color& color);
 
-            void DrawLine(const Maths::vec2<float>& v1, const Maths::vec2<float>& v2, float thickness, const Color& color);
+            void DrawLine(const Maths::vec2& v1, const Maths::vec2& v2, float thickness, const Color& color);
 
-            void DrawQuad(Maths::vec4<Maths::vec2<float>> positions, Maths::vec4<float> color);
+            void DrawQuad(Maths::vec4 positions, Color color);
+            
+            void DrawSprite(const Texture& texture, Maths::Rectangle bounds);
+            void DrawSprite(const Texture& texture, Maths::vec2 position, Maths::vec2 size);
+            void DrawSprite(const Texture& texture, float x, float y, float width, float height);
 
-            void DrawSprite(const Texture& texture, float width, float height);
-
-            void DrawText(Maths::vec2<float> position, float scale, const std::string& text, const Color& color);
+            void DrawText(const std::string& text, const std::string& font_name, float size,  const Color& color, Maths::vec2 position);
+            
         private:
             Shader* GetShader(const std::string& name);
 

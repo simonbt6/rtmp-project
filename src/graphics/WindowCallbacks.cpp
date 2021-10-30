@@ -5,10 +5,14 @@ namespace Graphics
 {
     void WindowCallbacks::WindowResizeCallback(GLFWwindow* window, int width, int height)
     {
-        Utils::FormatedPrint::PrintInfo("Window resized.");
-        glfwSetWindowTitle(window, (std::to_string(width) + string(" / ") + std::to_string(height)).c_str());
+        // Application::GetApplication().GetWindow()->SetSize(Maths::vec2<float>(width, height));
         glViewport(0, 0, width, height);
     }
+    void WindowCallbacks::WindowPositionCallback(GLFWwindow* window, int x, int y)
+    {
+        // Application::GetApplication().GetWindow()->SetPosition(Maths::vec2<float>(x, y));
+    }
+
             
     void WindowCallbacks::ErrorCallback(int error_code, const char* error_message)
     {

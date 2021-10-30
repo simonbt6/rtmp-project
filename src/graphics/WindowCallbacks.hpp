@@ -4,6 +4,9 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
+
+#include <maths/vec2.hpp>
+
 #include <utils/FormatedPrint.hpp>
 
 
@@ -14,6 +17,8 @@ namespace Graphics
     {
         public:
             static void WindowResizeCallback(GLFWwindow* window, int width, int height);
+
+            static void WindowPositionCallback(GLFWwindow* window, int x, int y);
 
             static void ErrorCallback(int error_code, const char* error_message);
 

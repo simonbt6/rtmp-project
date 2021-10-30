@@ -6,26 +6,26 @@
  * 
  */
 
-#include <maths/vec4.hpp>
+#include <maths/maths.hpp>
 
 namespace Graphics
 {
-    class Color : public Maths::vec4<float>
+    class Color : public Maths::vec4
     {
         private:
-            using Maths::vec4<float>::GetX;
-            using Maths::vec4<float>::GetY;
-            using Maths::vec4<float>::GetZ;
-            using Maths::vec4<float>::GetW;
+            using Maths::vec4::GetX;
+            using Maths::vec4::GetY;
+            using Maths::vec4::GetZ;
+            using Maths::vec4::GetW;
 
-            using Maths::vec4<float>::SetX;
-            using Maths::vec4<float>::SetY;
-            using Maths::vec4<float>::SetZ;
-            using Maths::vec4<float>::SetW;
+            using Maths::vec4::SetX;
+            using Maths::vec4::SetY;
+            using Maths::vec4::SetZ;
+            using Maths::vec4::SetW;
 
 
         public:
-            Color(float r, float g, float b, float a): Maths::vec4<float>(r,g,b, a) {};
+            Color(float r, float g, float b, float a): Maths::vec4(r,g,b, a) {};
 
             inline float GetR() const { return m_X; }
             inline float GetG() const { return m_Y; }

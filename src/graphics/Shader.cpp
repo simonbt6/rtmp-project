@@ -110,7 +110,7 @@ namespace Graphics
      * UNIFORM 2
      * 
      */
-    void Shader::SetUniform2f(const std::string& name, Maths::vec2<float> v)
+    void Shader::SetUniform2f(const std::string& name, Maths::vec2 v)
     {
         glUniform2f(GetUniformLocation(name), v.GetX(), v.GetY());
     }
@@ -120,7 +120,7 @@ namespace Graphics
         glUniform2f(GetUniformLocation(name), v0, v1);
     }
 
-    void Shader::SetUniform2i(const std::string& name, Maths::vec2<int32_t> v)
+    void Shader::SetUniform2i(const std::string& name, Maths::vec2 v)
     {
         glUniform2i(GetUniformLocation(name), v.GetX(), v.GetY());
     }
@@ -134,7 +134,7 @@ namespace Graphics
      * UNIFORM 3
      * 
      */
-    void Shader::SetUniform3f(const std::string& name, Maths::vec3<float> v)
+    void Shader::SetUniform3f(const std::string& name, Maths::vec3 v)
     {
         glUniform3f(GetUniformLocation(name), v.GetX(), v.GetY(), v.GetZ());
     }
@@ -144,7 +144,7 @@ namespace Graphics
         glUniform3f(GetUniformLocation(name), v0, v1, v2);
     }
 
-    void Shader::SetUniform3i(const std::string& name, Maths::vec3<int32_t> v)
+    void Shader::SetUniform3i(const std::string& name, Maths::vec3 v)
     {
         glUniform3i(GetUniformLocation(name), v.GetX(), v.GetY(), v.GetZ());
     }
@@ -158,7 +158,7 @@ namespace Graphics
      * UNIFORM 4
      * 
      */
-    void Shader::SetUniform4f(const std::string& name, Maths::vec4<float> v)
+    void Shader::SetUniform4f(const std::string& name, Maths::vec4 v)
     {
         glUniform4f(GetUniformLocation(name), v.GetX(), v.GetY(), v.GetZ(), v.GetW());
     }
@@ -168,7 +168,7 @@ namespace Graphics
         glUniform4f(GetUniformLocation(name), v0, v1, v2, v3);
     }
 
-    void Shader::SetUniform4i(const std::string& name, Maths::vec4<int32_t> v)
+    void Shader::SetUniform4i(const std::string& name, Maths::vec4 v)
     {
         glUniform4i(GetUniformLocation(name), v.GetX(), v.GetY(), v.GetZ(), v.GetW());
     }
@@ -176,5 +176,10 @@ namespace Graphics
     void Shader::SetUniform4i(const std::string& name, int32_t v0, int32_t v1, int32_t v2, int32_t v3)
     {
         glUniform4i(GetUniformLocation(name), v0, v1, v2, v3);
+    }
+
+    void Shader::SetUniformMat4(const std::string& name, const Maths::mat4& matrix)
+    {
+        glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, matrix.GetElements());
     }
 };

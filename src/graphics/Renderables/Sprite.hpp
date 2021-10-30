@@ -9,10 +9,8 @@
 #include <graphics/IRenderable2D.hpp>
 #include <graphics/color.hpp>
 
-#include <maths/vec2.hpp>
-#include <maths/vec3.hpp>
-#include <maths/vec4.hpp>
-#include <maths/rectangle.hpp>
+#include <maths/maths.hpp>
+
 
 namespace Graphics
 {
@@ -20,31 +18,24 @@ namespace Graphics
     {
         class Sprite: public IRenderable2D
         {
+
+            private:
+
             public:
+
+                Sprite(Texture* texture, const Color& color, const Maths::Rectangle bounds)
+                    : Sprite(texture, bounds.GetPosition(), bounds.GetSize(), color) {}
             
-                Sprite(const Maths::vec2<float>& position, const Maths::vec2<float>& size, const Color& color)
-                :IRenderable2D(position, size, color)
+                Sprite(Texture* texture, const Maths::vec2& position, const Maths::vec2& size, const Color& color)
+                    :IRenderable2D(position, size, color)
                 {
-                    const Maths::vec2<float>& p = m_Bounds.GetPosition();
-                    const Maths::vec2<float>& s = m_Bounds.GetSize();
-
-                    const float width  = s.GetX(), 
-                                height = s.GetY(),
-                                x      = p.GetX(),
-                                y      = p.GetY();
-
-                    SetTexture(new Texture("Red.png"));
-                    Maths::vec2(x, y);
-                    m_UV.insert(m_UV.end(), {
-                        Maths::vec4((-width + x), (-height + y), 0.0f, 0.0f),
-                        Maths::vec4(( width + x), (-height + y), 1.0f, 0.0f),
-                        Maths::vec4(( width + x), ( height + y), 1.0f, 1.0f),
-                        Maths::vec4((-width + x), ( height + y), 0.0f, 1.0f) 
-                    });
-                    m_Indices.insert(m_Indices.end(), {
-                        0, 1, 2,    2, 3, 0
-                    });
+                    SetTexture(texture);
                 };
+
+                virtual void Submit(Renderer2D* renderer) const 
+                {
+                    renderer->DrawSprite(GetTexture(), GetBounds());
+                }
         };
     };
 };

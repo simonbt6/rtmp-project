@@ -11,11 +11,7 @@
 
 #include "color.hpp"
 
-#include <maths/vec2.hpp>
-#include <maths/vec3.hpp>
-#include <maths/vec4.hpp>
-#include <maths/rectangle.hpp>
-
+#include <maths/maths.hpp>
 
 #include <inttypes.h>
 #include <vector>
@@ -23,6 +19,8 @@
 
 namespace Graphics
 {
+
+    class Renderer2D;
     class IRenderable2D
     {
         protected:
@@ -31,25 +29,27 @@ namespace Graphics
             Texture* m_Texture;
 
             Maths::Rectangle m_Bounds;
-            std::vector<Maths::vec4<float>> m_UV;
+            std::vector<Maths::vec4> m_UV;
             std::vector<uint32_t> m_Indices;
 
             bool m_Visible;
 
         public:
-            IRenderable2D(const Maths::vec2<float>& position, const Maths::vec2<float>& size, const Color& color)
+            IRenderable2D(const Maths::vec2& position, const Maths::vec2& size, const Color& color)
             : m_Bounds(Maths::Rectangle(position, size)), m_Color(color) {}
 
             virtual ~IRenderable2D(){}
 
-            inline const Maths::vec2<float>& GetPosition() const{ return m_Bounds.GetPosition(); }
-            inline void SetPosition(Maths::vec2<float> position) { m_Bounds.SetPosition(position); }
+            virtual void Submit(Renderer2D* renderer) const {};
+
+            inline const Maths::vec2& GetPosition() const{ return m_Bounds.GetPosition(); }
+            inline void SetPosition(Maths::vec2 position) { m_Bounds.SetPosition(position); }
 
             inline bool IsVisible() const{ return m_Visible; }
             inline void SetVisible(bool value) { m_Visible = value; }
 
-            inline const Maths::vec2<float>& GetSize() const{ return m_Bounds.GetSize(); }
-            inline void SetSize(const Maths::vec2<float>& size) { m_Bounds.SetSize(size); }
+            inline const Maths::vec2& GetSize() const{ return m_Bounds.GetSize(); }
+            inline void SetSize(const Maths::vec2& size) { m_Bounds.SetSize(size); }
 
             inline const Color& GetColor() const{return m_Color; }
             inline void SetColor(const Color& color) {m_Color = color; }
@@ -64,7 +64,7 @@ namespace Graphics
             inline uint32_t GetVertexCount() const{ return m_UV.size(); }
             inline uint32_t GetIndexCount()  const{ return m_Indices.size(); } 
 
-            inline const Maths::vec4<float>* GetVertices() const{ return &m_UV[0]; }
+            inline const Maths::vec4* GetVertices() const{ return &m_UV[0]; }
             inline const uint32_t* GetIndices() const{ return &m_Indices[0]; }
 
             inline float* GetVerticesArray() const
