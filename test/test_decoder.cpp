@@ -1,19 +1,9 @@
 
-<<<<<<< HEAD
-#include <VideoCodecs.hpp>
-#include <StreamDecoder.hpp>
-
-#include <Window.hpp>
-
-#include <FileManager.hpp>
-#include <Memory.hpp>
-=======
-#include <codecs/VideoDecoder.hpp>
+#include <muxer/VideoDecoder.hpp>
 
 #include <graphics/Application.hpp>
 
 #include <utils/FileManager.hpp>
->>>>>>> graphics
 
 #include <vector>
 #include <stdio.h>
@@ -41,16 +31,12 @@ Graphics::Layer2D* UILayer;
 Graphics::Application application("Application test.", bounds);
 Graphics::SoundEngine& soundEngine = application.GetSoundEngine();
 
-<<<<<<< HEAD
-std::vector<unsigned char>* read(string path)
-=======
 Maths::mat4 mM;
 Maths::mat4 mV;
 Maths::mat4 mP;
 
 
 void playVideoFn()
->>>>>>> graphics
 {
     int64_t pts;
     decoder->ReadFrame(frame_data, &pts);
@@ -81,23 +67,6 @@ void playVideoFn()
 
 }
 
-<<<<<<< HEAD
-int main()
-{
-    Codecs::VideoDecoder* video_decoder = new Codecs::VideoDecoder();
-    Codecs::StreamDecoder* stream_decoder = new Codecs::StreamDecoder(AVCodecID::AV_CODEC_ID_H264);
-
-    std::vector<uint8_t>* data = read("data/videodata.bin");
-    
-    try
-    {
-        // AVPacket* packet;
-        // video_decoder->DecodeVideoData("data/bunny_video.mp4", data);
-        // packet = stream_decoder->ParsePacket(data->data(), data->size());
-
-        Graphics::Window window;
-        window.Initialize();
-=======
 
 int main()
 {   
@@ -125,7 +94,6 @@ int main()
 
 
         application.Start();
->>>>>>> graphics
         
     }
     catch(const std::exception& e)
