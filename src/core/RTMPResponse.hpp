@@ -16,8 +16,8 @@
 
 #include "Netconnection.hpp"
 
-#include <FormatedPrint.hpp>
-#include <amf0.hpp>
+#include <utils/FormatedPrint.hpp>
+#include <utils/amf0.hpp>
 
 using namespace std;
 

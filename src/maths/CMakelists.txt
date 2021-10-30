@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.20)
+
+project (rtmp_maths)
+
+set (SOURCE
+    "vec4.cpp"
+    "mat4.cpp"
+)
+
+set (includes "../../includes")
+set (libs "../../libs")
+
+add_library(rtmp_maths ${SOURCE})
+
+target_include_directories(rtmp_maths PUBLIC ../ ${includes} ${includes}/ffmpeg ${libs}/glfw/include/ ${libs}/glfw/deps)

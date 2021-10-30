@@ -15,7 +15,10 @@
 #include <string>
 #include <inttypes.h>
 
+<<<<<<< HEAD
 #include "Memory.hpp"
+=======
+>>>>>>> graphics
 
 namespace Utils 
 {

@@ -8,6 +8,7 @@ set (rtmp_libs
     "core/RTMPParser.cpp"
     "core/RTMPResponse.cpp"
     
+<<<<<<< HEAD
     "codecs/VideoCodecs.cpp"
     "codecs/StreamDecoder.cpp"
 
@@ -28,12 +29,31 @@ set (rtmp_libs
     
     "utils/FileManager.cpp"
     "utils/Memory.cpp"
+=======
+    "codecs/VideoDecoder.cpp"
+    
+    "utils/FileManager.cpp"
+>>>>>>> graphics
 )
 
 
 set (includes "../includes/")
+set (libs "../libs/")
 
+add_subdirectory(graphics)
+add_subdirectory(maths)
+
+add_library(rtmp_lib ${rtmp_libs})
+
+<<<<<<< HEAD
 add_library(rtmp_lib ${rtmp_libs})
 
 target_include_directories(rtmp_lib PUBLIC core/ graphics/ codecs/ utils/ ${includes} ${includes}/ffmpeg ../libs/glfw/include/ ../libs/glfw/deps/ ../libs/glad/include/)
 target_link_directories(rtmp_lib PUBLIC glfw)
+=======
+target_include_directories(rtmp_lib PUBLIC / ${includes} ${includes}/ffmpeg ../libs/glfw/include/ ../libs/glfw/deps)
+target_link_libraries(rtmp_lib rtmp_graphics)
+target_link_libraries(rtmp_lib rtmp_maths)
+target_link_libraries(rtmp_lib glfw)
+target_link_libraries(rtmp_lib glad)
+>>>>>>> graphics
