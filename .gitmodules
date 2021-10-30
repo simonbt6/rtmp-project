@@ -13,3 +13,9 @@
 [submodule "src/rtmp"]
 	path = src/rtmp
 	url = https://github.com/simonbt6/rtmp-lib
+[submodule "src/graphics"]
+	path = src/graphics
+	url = https://github.com/simonbt6/GraphicsEngine
+[submodule "src/maths"]
+	path = src/maths
+	url = https://github.com/simonbt6/maths-lib
