@@ -18,7 +18,7 @@
 #include "FormatedPrint.hpp"
 #include "Object.hpp"
 
-#include "../core/Netconnection.hpp"
+#include <rtmp/Netconnection.hpp>
 
 using namespace std;
 
