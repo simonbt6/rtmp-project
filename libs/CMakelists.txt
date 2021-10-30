@@ -21,10 +21,6 @@ set (LIBS
 
 add_subdirectory(glfw)
 add_subdirectory(glad)
-<<<<<<< HEAD
-=======
-add_subdirectory(ikpMP3)
->>>>>>> graphics
 
 
 add_library(libs INTERFACE)
@@ -33,9 +29,4 @@ target_include_directories(libs INTERFACE)
 
 target_link_libraries(libs INTERFACE ${LIBS})
 target_link_libraries(libs INTERFACE glfw)
-<<<<<<< HEAD
 target_link_libraries(libs INTERFACE glad)
-=======
-target_link_libraries(libs INTERFACE glad)
-target_link_libraries(libs INTERFACE ikpMP3)
->>>>>>> graphics

@@ -14,4 +14,11 @@ add_subdirectory(utils)
 add_library(src_lib INTERFACE)
 
 target_include_directories(rtmp_lib PUBLIC rtmp/ graphics/ codecs/ utils/ ${includes} ${includes}/ffmpeg ../libs/glfw/include/ ../libs/glfw/deps/ ../libs/glad/include/)
-target_link_directories(rtmp_lib PUBLIC glfw)
+target_link_libraries(src_lib INTERFACE graphics_engine)
+target_link_libraries(src_lib INTERFACE muxer_lib)
+target_link_libraries(src_lib INTERFACE maths_lib)
+target_link_libraries(src_lib INTERFACE rtmp_lib)
+target_link_libraries(src_lib INTERFACE utils_lib)
+target_link_libraries(src_lib INTERFACE glfw)
+
+
